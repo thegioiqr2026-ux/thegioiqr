@@ -1,44 +1,65 @@
 <div>
-    <div id="banner-container" class="banner-area">
-        <a href="https://thegioiqr.com" target="_blank" class="w-100 h-100 text-decoration-none">
-            <img src="https://via.placeholder.com/800x350/0d6efd/ffffff?text=Quang+Cao+He+Thong" class="banner-img" alt="Quảng cáo">
-            <span class="badge bg-dark bg-opacity-50 position-absolute top-0 end-0 m-0 rounded-0">Ad</span>
-        </a>
+    <div id="banner-container" class="banner-area position-relative">
+        <img src="https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1000&auto=format&fit=crop" 
+             class="banner-img" 
+             style="filter: brightness(0.7);" 
+             alt="Quảng cáo">
+        
+        <div class="position-absolute w-100 h-100 top-0 start-0 d-flex flex-column justify-content-center align-items-center text-white text-center p-3">
+            <h5 class="fw-bold text-uppercase mb-1" style="text-shadow: 1px 1px 4px rgba(0,0,0,0.8);">Đào tạo An Toàn VDC</h5>
+            <p class="small mb-2" style="text-shadow: 1px 1px 3px rgba(0,0,0,0.8);">Huấn luyện an toàn lao động chuẩn Quốc gia</p>
+            <a href="https://vdc.com.vn" target="_blank" class="btn btn-sm btn-light text-primary fw-bold rounded-pill px-3 shadow">
+                Xem chi tiết
+            </a>
+        </div>
+
+        <span class="badge bg-dark bg-opacity-50 position-absolute top-0 end-0 m-0 rounded-0" style="font-size: 0.7rem;">Ad</span>
     </div>
 
     <div id="main-content" class="container py-3">
         
-        <div class="qr-card shadow-sm rounded-3">
-            <div class="d-flex align-items-center mb-3 text-primary">
-                <i class="fas fa-user-check me-2"></i>
-                <span class="fw-bold small text-uppercase" id="v-owner">...</span>
+        <div class="qr-card shadow-sm rounded-3 bg-white">
+            <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
+                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px;">
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <div>
+                    <small class="text-muted d-block" style="font-size: 0.7rem;">Tài liệu chia sẻ bởi</small>
+                    <span class="fw-bold text-dark" id="v-owner">...</span>
+                </div>
             </div>
             
-            <h1 id="v-title" class="qr-title">Đang tải dữ liệu...</h1>
-            <div id="v-desc" class="qr-desc">...</div>
+            <h1 id="v-title" class="qr-title text-primary mb-3">Đang tải dữ liệu...</h1>
+            
+            <div class="bg-light p-3 rounded mb-4 border">
+                <div id="v-desc" class="qr-desc mb-0 text-secondary">...</div>
+            </div>
 
-            <hr class="text-muted opacity-25 my-4">
+            <div class="d-grid gap-2">
+                <a id="v-btn" href="#" class="action-btn btn-access d-flex align-items-center justify-content-center" target="_blank">
+                    <span class="me-2"><i class="fas fa-external-link-alt"></i></span>
+                    <span>TRUY CẬP TÀI LIỆU</span>
+                </a>
 
-            <a id="v-btn" href="#" class="action-btn btn-access" target="_blank">
-                <i class="fas fa-external-link-alt me-2"></i> TRUY CẬP TÀI LIỆU
-            </a>
-
-            <button class="action-btn btn-msg" data-bs-toggle="modal" data-bs-target="#contactModal">
-                <i class="fas fa-comment-dots me-2"></i> NHẮN TIN HỖ TRỢ
-            </button>
+                <button class="action-btn btn-msg d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#contactModal">
+                    <span class="me-2"><i class="fas fa-comment-dots"></i></span>
+                    <span>NHẮN TIN HỖ TRỢ</span>
+                </button>
+            </div>
         </div>
 
-        <div class="text-center mt-4">
-            <small class="text-muted opacity-50">Powered by TheGioiQR.com</small>
-        </div>
-    </div>
+        <div style="height: 20px;"></div> </div>
 
     <div id="limit-warning" class="hidden container py-5 text-center">
-        <div class="card shadow-sm p-5 border-danger">
+        <div class="card shadow-sm p-5 border-danger bg-white">
             <div class="text-danger mb-3"><i class="fas fa-lock fa-4x"></i></div>
             <h3 class="fw-bold text-danger">Giới hạn truy cập!</h3>
             <p class="text-muted">Mã QR này đã đạt giới hạn lượt quét miễn phí.</p>
-            <p class="small">Vui lòng liên hệ chủ sở hữu để mở khóa.</p>
+            <div class="d-grid gap-2 mt-4">
+                 <button class="btn btn-outline-danger rounded-pill" data-bs-toggle="modal" data-bs-target="#contactModal">
+                    Liên hệ chủ sở hữu
+                </button>
+            </div>
         </div>
     </div>
 </div>
