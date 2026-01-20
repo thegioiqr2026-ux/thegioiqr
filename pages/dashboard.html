@@ -1,0 +1,46 @@
+<div class="container py-3">
+    
+    <div id="view-create">
+        <h5 class="text-primary fw-bold mb-3"><i class="fas fa-magic me-2"></i>Tạo Mã QR Mới</h5>
+        
+        <div class="card border-0 shadow-sm p-3 mb-4">
+            <div class="mb-3">
+                <input type="text" id="inp-title" class="form-control form-control-lg" placeholder="Tiêu đề tài liệu (VD: Bài giảng tuần 1)">
+            </div>
+            <div class="mb-3">
+                <textarea id="inp-desc" class="form-control" rows="3" placeholder="Mô tả ngắn gọn / Ghi chú cho người xem..."></textarea>
+            </div>
+            <div class="mb-3">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-link"></i></span>
+                    <input type="url" id="inp-link" class="form-control" placeholder="Dán link Drive/Youtube/Web tại đây...">
+                </div>
+            </div>
+            <button class="btn btn-primary w-100 rounded-pill py-3 fw-bold shadow-sm" onclick="app.createQR()">
+                <i class="fas fa-bolt me-1"></i> TẠO MÃ NGAY
+            </button>
+        </div>
+
+        <div id="new-qr" class="hidden text-center bg-white p-4 rounded shadow border border-success">
+            <h6 class="text-success fw-bold text-uppercase"><i class="fas fa-check-circle"></i> Thành công!</h6>
+            <div id="qr-img" class="d-flex justify-content-center my-3 bg-white p-2"></div>
+            <p class="small text-muted mb-3">Mã này đã được lưu vào danh sách quản lý.</p>
+            <button class="btn btn-dark rounded-pill px-4" onclick="app.dlQR()">
+                <i class="fas fa-download me-2"></i> Tải ảnh QR về máy
+            </button>
+        </div>
+    </div>
+
+    <div id="view-list" class="hidden">
+        <h5 class="text-primary fw-bold mb-3"><i class="fas fa-list me-2"></i>Danh sách mã đã tạo</h5>
+        <div id="list-container">
+            </div>
+    </div>
+
+    <div id="view-inbox" class="hidden">
+        <h5 class="text-primary fw-bold mb-3"><i class="fas fa-envelope me-2"></i>Tin nhắn từ người xem</h5>
+        <div id="inbox-container">
+            </div>
+    </div>
+
+</div>
