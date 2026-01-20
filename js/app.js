@@ -3,7 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, collection, query, where, getDocs, deleteDoc, orderBy, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const APP_VERSION = "0.10"; 
+const APP_VERSION = "0.11"; 
 const appInstance = initializeApp(firebaseConfig);
 const auth = getAuth(appInstance);
 const db = getFirestore(appInstance);
@@ -151,6 +151,49 @@ const app = {
         if (tabId === 'inbox') this.loadInbox();
     },
 
+    // --- HÀM XỬ LÝ VẼ CHỮ VÀO GIỮA QR (CORE) ---
+    addBranding(containerId) {
+        const div = document.getElementById(containerId);
+        const canvas = div.querySelector('canvas');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        const size = canvas.width;
+        
+        // Cấu hình chữ
+        const text = "THEGIOIQR";
+        const fontSize = size * 0.08; // Chữ chiếm 8% kích thước QR
+        ctx.font = `900 ${fontSize}px Inter, sans-serif`; // Font đậm
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        // Tính toán kích thước hộp nền
+        const textWidth = ctx.measureText(text).width;
+        const boxWidth = textWidth + (size * 0.05); // Padding
+        const boxHeight = fontSize * 1.8;
+        const centerX = size / 2;
+        const centerY = size / 2;
+
+        // Vẽ hộp nền trắng (Bo góc nhẹ nếu muốn, ở đây vẽ chữ nhật cho đơn giản và an toàn)
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(centerX - boxWidth/2, centerY - boxHeight/2, boxWidth, boxHeight);
+        
+        // Vẽ viền hộp (Optional - cho đẹp)
+        ctx.strokeStyle = "#4361ee";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(centerX - boxWidth/2, centerY - boxHeight/2, boxWidth, boxHeight);
+
+        // Vẽ chữ
+        ctx.fillStyle = "#4361ee"; // Màu xanh thương hiệu
+        ctx.fillText(text, centerX, centerY);
+
+        // Cập nhật lại thẻ IMG (để người dùng tải về được ảnh đã có chữ)
+        const img = div.querySelector('img');
+        if (img) {
+            img.src = canvas.toDataURL("image/png");
+        }
+    },
+
     async createQR() {
         if (userData.dailyCount >= userData.dailyLimit) return alert("Hết lượt tạo hôm nay.");
         const title = document.getElementById('inp-title').value;
@@ -170,7 +213,20 @@ const app = {
 
             const shortUrl = `${window.location.origin}${window.location.pathname}?id=${docRef.id}`;
             document.getElementById('qr-img').innerHTML = "";
-            new QRCode(document.getElementById('qr-img'), { text: shortUrl, width: 160, height: 160 });
+            
+            // TẠO QR VỚI MỨC ĐỘ SỬA LỖI CAO (H)
+            new QRCode(document.getElementById('qr-img'), { 
+                text: shortUrl, 
+                width: 180, 
+                height: 180,
+                correctLevel: QRCode.CorrectLevel.H // QUAN TRỌNG: Mức H cho phép che 30%
+            });
+
+            // Chèn chữ sau khi vẽ xong
+            setTimeout(() => {
+                this.addBranding('qr-img');
+            }, 100);
+
             document.getElementById('new-qr').classList.remove('hidden');
             document.getElementById('inp-title').value = ""; document.getElementById('inp-link').value = "";
         } catch (e) { alert("Lỗi: " + e.message); } finally { document.getElementById('loading-overlay').classList.add('hidden'); }
@@ -178,7 +234,7 @@ const app = {
 
     dlQR() {
         const img = document.querySelector('#qr-img img');
-        if(img) { const a = document.createElement('a'); a.download = 'QR.png'; a.href = img.src; a.click(); }
+        if(img) { const a = document.createElement('a'); a.download = 'TheGioiQR.png'; a.href = img.src; a.click(); }
     },
 
     // --- LIST & SEARCH ---
@@ -234,47 +290,40 @@ const app = {
         this.renderQRList(filtered);
     },
 
-    // --- QR SHOW & DOWNLOAD (NÂNG CẤP) ---
+    // --- QR SHOW & DOWNLOAD (CÓ BRANDING) ---
     showQR(id, title) {
         document.getElementById('modal-qr-target').innerHTML = ""; 
         const fullUrl = `${window.location.origin}${window.location.pathname}?id=${id}`;
         document.getElementById('modal-qr-title').innerText = title || "Mã QR";
         
-        // Hiện Modal trước
         new bootstrap.Modal(document.getElementById('qrShowModal')).show();
 
-        // Đợi 1 chút để modal render xong mới vẽ QR (Tránh lỗi ảnh trắng)
         setTimeout(() => {
             new QRCode(document.getElementById('modal-qr-target'), {
                 text: fullUrl,
-                width: 200,
-                height: 200,
-                correctLevel: QRCode.CorrectLevel.H
+                width: 250, // Tăng kích thước chút cho rõ
+                height: 250,
+                correctLevel: QRCode.CorrectLevel.H // BẮT BUỘC: Mức H
             });
+            
+            // Vẽ chữ đè lên
+            setTimeout(() => {
+                this.addBranding('modal-qr-target');
+            }, 100);
         }, 300);
     },
 
     downloadExistingQR() {
         const div = document.getElementById('modal-qr-target');
-        // Tìm thẻ img (nếu đã render xong) hoặc thẻ canvas (nếu img chưa tạo)
         const img = div.querySelector('img');
-        const canvas = div.querySelector('canvas');
         
-        let imgURI = '';
-
-        if (img && img.src && img.src.startsWith('data:image')) {
-            imgURI = img.src;
-        } else if (canvas) {
-            imgURI = canvas.toDataURL("image/png");
-        }
-
-        if (imgURI) {
+        if (img && img.src) {
             const a = document.createElement('a');
             a.download = 'TheGioiQR.png';
-            a.href = imgURI;
+            a.href = img.src;
             a.click();
         } else {
-            alert("Đang tạo ảnh, vui lòng thử lại sau giây lát...");
+            alert("Đang tạo ảnh, vui lòng thử lại...");
         }
     },
 
@@ -365,6 +414,7 @@ const app = {
             document.getElementById('v-desc').innerText = d.desc || "";
             document.getElementById('v-owner').innerText = d.ownerName || "TheGioiQR User";
             document.getElementById('v-btn').href = d.link;
+
             const ownerSnap = await getDoc(doc(db, "users", d.createdBy));
             if (ownerSnap.exists() && ownerSnap.data().isVip) {
                 document.getElementById('banner-container').classList.add('hidden');
