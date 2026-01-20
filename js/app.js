@@ -3,7 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, collection, query, where, getDocs, deleteDoc, orderBy, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const APP_VERSION = "0.7"; 
+const APP_VERSION = "0.8"; // Cập nhật Version
 const appInstance = initializeApp(firebaseConfig);
 const auth = getAuth(appInstance);
 const db = getFirestore(appInstance);
@@ -24,9 +24,21 @@ const app = {
         const qrId = urlParams.get('id');
 
         if (qrId) {
+            // Chế độ Viewer
             await this.loadPage('viewer');
             this.loadViewerData(qrId);
+            // Vẫn kiểm tra Auth để cập nhật Menu (nếu lỡ họ đã đăng nhập rồi mà quét mã)
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    currentUser = user;
+                    await this.syncUser(user);
+                    this.updateSidebar(true);
+                } else {
+                    this.updateSidebar(false);
+                }
+            });
         } else {
+            // Chế độ Admin
             onAuthStateChanged(auth, async (user) => {
                 if (user) {
                     currentUser = user;
@@ -100,7 +112,6 @@ const app = {
 
     async checkUnreadMessages() {
         try {
-            // Cần Index: toUid (Asc) + read (Asc)
             const q = query(collection(db, "messages"), where("toUid", "==", currentUser.uid), where("read", "==", false));
             const snap = await getDocs(q);
             const count = snap.size;
@@ -113,10 +124,7 @@ const app = {
                     badge.classList.add('hidden');
                 }
             }
-        } catch (error) {
-            console.warn("Chưa có Index cho Badge tin nhắn. Vui lòng xem Console để tạo.");
-            console.error(error); // Bấm vào link lỗi ở đây để tạo Index
-        }
+        } catch (error) { console.warn("Index Warning", error); }
     },
 
     // --- NAV ---
@@ -124,6 +132,14 @@ const app = {
         const sidebarEl = document.getElementById('sidebar');
         const sidebarInstance = bootstrap.Offcanvas.getInstance(sidebarEl);
         if (sidebarInstance) sidebarInstance.hide();
+
+        // Nếu đang ở chế độ xem QR mà bấm menu -> Chuyển về Dashboard
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('id')) {
+            // Xóa ID khỏi URL và load lại Dashboard mà không reload trang
+            window.history.pushState({}, document.title, window.location.pathname);
+            await this.loadPage('dashboard');
+        }
 
         if (tabId === 'guide') { await this.loadPage('huongdan'); return; }
         if (!document.getElementById('view-create')) { await this.loadPage('dashboard'); }
@@ -173,10 +189,8 @@ const app = {
     async loadListQR() {
         const container = document.getElementById('list-container');
         container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm"></div></div>';
-        
         const q = query(collection(db, "qr_codes"), where("createdBy", "==", currentUser.uid), orderBy("createdAt", "desc"));
         const snap = await getDocs(q);
-        
         myQrList = [];
         snap.forEach(doc => { myQrList.push({ id: doc.id, ...doc.data() }); });
         this.renderQRList(myQrList);
@@ -265,19 +279,14 @@ const app = {
         container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm"></div></div>';
         
         try {
-            // Cần Index: toUid (Asc) + createdAt (Desc)
             const q = query(collection(db, "messages"), where("toUid", "==", currentUser.uid), orderBy("createdAt", "desc"));
             const snap = await getDocs(q);
-            
             document.getElementById('msg-badge').classList.add('hidden');
-
             container.innerHTML = snap.empty ? '<p class="text-center text-muted">Hộp thư trống.</p>' : '';
             if(!snap.empty) container.innerHTML = '';
-
             snap.forEach(async docSnap => {
                 const m = docSnap.data();
                 if (m.read === false) { await updateDoc(doc(db, "messages", docSnap.id), { read: true }); }
-
                 container.innerHTML += `
                     <div class="bg-white p-3 rounded shadow-sm mb-2 border ${m.read ? '' : 'border-primary border-2'}">
                         <div class="d-flex justify-content-between mb-1">
@@ -291,8 +300,8 @@ const app = {
             });
             this.checkUnreadMessages();
         } catch (error) {
-            console.error("Lỗi Hộp thư (Thiếu Index):", error);
-            container.innerHTML = `<div class="text-center text-danger p-3"><p>Lỗi: Thiếu Index Database.</p><p class="small">Vui lòng mở Console (F12) bấm vào link lỗi để tạo Index cho Messages.</p></div>`;
+            console.error(error);
+            container.innerHTML = `<div class="text-center text-danger p-3">Lỗi tải hộp thư.</div>`;
         }
     },
 
@@ -307,6 +316,7 @@ const app = {
             if (d.views >= d.viewLimit) {
                 document.getElementById('main-content').classList.add('hidden');
                 document.getElementById('limit-warning').classList.remove('hidden');
+                document.getElementById('loading-overlay').classList.add('hidden');
                 return;
             }
             updateDoc(qrRef, { views: increment(1) });
@@ -314,7 +324,6 @@ const app = {
             document.getElementById('v-desc').innerText = d.desc || "";
             document.getElementById('v-owner').innerText = d.ownerName || "TheGioiQR User";
             document.getElementById('v-btn').href = d.link;
-
             const ownerSnap = await getDoc(doc(db, "users", d.createdBy));
             if (ownerSnap.exists() && ownerSnap.data().isVip) {
                 document.getElementById('banner-container').classList.add('hidden');
@@ -340,9 +349,11 @@ const app = {
         bootstrap.Modal.getInstance(document.getElementById('contactModal')).hide();
     },
     
+    // --- SỬA LỖI ĐĂNG NHẬP (QUAN TRỌNG) ---
+    // Hàm này sẽ xóa parameter ?id=... để thoát chế độ Viewer
     showLogin() {
-        this.nav('create');
-        window.location.reload();
+        const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        window.location.href = cleanUrl;
     }
 };
 
