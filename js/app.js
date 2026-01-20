@@ -3,7 +3,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, collection, query, where, getDocs, deleteDoc, orderBy, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// --- KHỞI TẠO FIREBASE ---
+// --- CẤU HÌNH ---
+const APP_VERSION = "0.4"; // Update Version
 const appInstance = initializeApp(firebaseConfig);
 const auth = getAuth(appInstance);
 const db = getFirestore(appInstance);
@@ -14,9 +15,12 @@ let userData = null;
 let currentQrData = {}; 
 const root = document.getElementById('app-root'); 
 
-// --- HỆ THỐNG APP ---
 const app = {
     async init() {
+        // Cập nhật Version vào Footer
+        const verEl = document.getElementById('app-version');
+        if(verEl) verEl.innerText = APP_VERSION;
+
         const urlParams = new URLSearchParams(window.location.search);
         const qrId = urlParams.get('id');
 
@@ -28,6 +32,7 @@ const app = {
                 if (user) {
                     currentUser = user;
                     await this.syncUser(user);
+                    // Mặc định tải dashboard
                     await this.loadPage('dashboard');
                     this.updateSidebar(true);
                     this.nav('create'); 
@@ -100,20 +105,36 @@ const app = {
         }
     },
 
-    // --- DASHBOARD ---
-    nav(tabId) {
-        ['view-create', 'view-list', 'view-inbox', 'view-guide'].forEach(id => {
-            const el = document.getElementById(id);
-            if(el) el.classList.add('hidden');
-        });
-        
-        const target = document.getElementById('view-' + tabId);
-        if(target) target.classList.remove('hidden');
-
+    // --- HỆ THỐNG ĐIỀU HƯỚNG THÔNG MINH (NAV) ---
+    async nav(tabId) {
+        // Đóng sidebar trước
         const sidebarEl = document.getElementById('sidebar');
         const sidebarInstance = bootstrap.Offcanvas.getInstance(sidebarEl);
         if (sidebarInstance) sidebarInstance.hide();
 
+        // Xử lý chuyển trang Hướng Dẫn (Dạng trang riêng)
+        if (tabId === 'guide') {
+            await this.loadPage('huongdan');
+            return; 
+        }
+
+        // Xử lý các tab thuộc Dashboard (Create, List, Inbox)
+        // 1. Kiểm tra xem đang ở Dashboard chưa, nếu chưa thì load lại Dashboard
+        if (!document.getElementById('view-create')) {
+            await this.loadPage('dashboard');
+        }
+
+        // 2. Ẩn tất cả các tab
+        ['view-create', 'view-list', 'view-inbox'].forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.classList.add('hidden');
+        });
+        
+        // 3. Hiện tab được chọn
+        const target = document.getElementById('view-' + tabId);
+        if(target) target.classList.remove('hidden');
+
+        // 4. Load dữ liệu
         if (tabId === 'list') this.loadListQR();
         if (tabId === 'inbox') this.loadInbox();
     },
@@ -168,7 +189,6 @@ const app = {
         }
     },
 
-    // --- QUẢN LÝ DANH SÁCH (GIAO DIỆN MỚI) ---
     async loadListQR() {
         const container = document.getElementById('list-container');
         container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm"></div></div>';
@@ -193,7 +213,6 @@ const app = {
             if (percent > 70) badgeClass = 'bg-warning text-dark';
             if (percent >= 100) badgeClass = 'bg-danger';
             
-            // Xử lý mô tả
             let descDisplay = d.desc || "Chưa có mô tả";
             if(descDisplay.length > 35) descDisplay = descDisplay.substring(0, 35) + "...";
 
@@ -212,25 +231,10 @@ const app = {
                         <div class="text-muted small text-truncate pe-2" style="max-width: 60%;">
                             ${descDisplay}
                         </div>
-
                         <div class="d-flex gap-1">
-                            <button class="btn btn-sm text-secondary" 
-                                    onclick="window.open('?id=${docSnap.id}', '_blank')" 
-                                    title="Xem">
-                                <i class="fas fa-eye fa-lg"></i>
-                            </button>
-
-                            <button class="btn btn-sm text-primary" 
-                                    onclick="app.openEdit('${docSnap.id}')" 
-                                    title="Sửa">
-                                <i class="fas fa-pen fa-lg"></i>
-                            </button>
-
-                            <button class="btn btn-sm text-danger" 
-                                    onclick="app.deleteQR('${docSnap.id}')" 
-                                    title="Xóa">
-                                <i class="fas fa-trash fa-lg"></i>
-                            </button>
+                            <button class="btn btn-sm text-secondary" onclick="window.open('?id=${docSnap.id}', '_blank')" title="Xem"><i class="fas fa-eye fa-lg"></i></button>
+                            <button class="btn btn-sm text-primary" onclick="app.openEdit('${docSnap.id}')" title="Sửa"><i class="fas fa-pen fa-lg"></i></button>
+                            <button class="btn btn-sm text-danger" onclick="app.deleteQR('${docSnap.id}')" title="Xóa"><i class="fas fa-trash fa-lg"></i></button>
                         </div>
                     </div>
                 </div>
@@ -238,7 +242,6 @@ const app = {
         });
     },
 
-    // --- EDIT & DELETE ---
     async openEdit(id) {
         document.getElementById('loading-overlay').classList.remove('hidden');
         try {
@@ -255,11 +258,7 @@ const app = {
                 alert("Mã này không còn tồn tại!");
                 this.loadListQR();
             }
-        } catch (e) {
-            console.error(e);
-        } finally {
-            document.getElementById('loading-overlay').classList.add('hidden');
-        }
+        } catch (e) { console.error(e); } finally { document.getElementById('loading-overlay').classList.add('hidden'); }
     },
 
     async saveEdit() {
@@ -267,28 +266,17 @@ const app = {
         const title = document.getElementById('edit-title').value;
         const desc = document.getElementById('edit-desc').value;
         const link = document.getElementById('edit-link').value;
-
         if(!link) return alert("Link không được để trống!");
-
         const btnSave = document.querySelector('#editModal .btn-primary');
         const originalText = btnSave.innerText;
         btnSave.innerText = "Đang lưu...";
         btnSave.disabled = true;
-
         try {
-            await updateDoc(doc(db, "qr_codes", id), {
-                title, desc, link, updatedAt: new Date().toISOString()
-            });
-            
+            await updateDoc(doc(db, "qr_codes", id), { title, desc, link, updatedAt: new Date().toISOString() });
             bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
             this.loadListQR();
             alert("Đã cập nhật!");
-        } catch (e) {
-            alert("Lỗi: " + e.message);
-        } finally {
-            btnSave.innerText = originalText;
-            btnSave.disabled = false;
-        }
+        } catch (e) { alert("Lỗi: " + e.message); } finally { btnSave.innerText = originalText; btnSave.disabled = false; }
     },
 
     async deleteQR(id) {
@@ -303,10 +291,8 @@ const app = {
         container.innerHTML = 'Đang tải...';
         const q = query(collection(db, "messages"), where("toUid", "==", currentUser.uid), orderBy("createdAt", "desc"));
         const snap = await getDocs(q);
-        
         container.innerHTML = snap.empty ? '<p class="text-center text-muted">Hộp thư trống.</p>' : '';
         if(!snap.empty) container.innerHTML = '';
-
         snap.forEach(docSnap => {
             const m = docSnap.data();
             container.innerHTML += `
@@ -322,14 +308,11 @@ const app = {
         });
     },
 
-    // --- VIEWER ---
     async loadViewerData(id) {
         try {
             const qrRef = doc(db, "qr_codes", id);
             const snap = await getDoc(qrRef);
-            
             if (!snap.exists()) throw new Error("404");
-            
             const d = snap.data();
             currentQrData = { id: id, owner: d.createdBy, title: d.title };
             
@@ -339,9 +322,7 @@ const app = {
                 document.getElementById('loading-overlay').classList.add('hidden');
                 return;
             }
-
             updateDoc(qrRef, { views: increment(1) });
-
             document.getElementById('v-title').innerText = d.title || "Tài liệu";
             document.getElementById('v-desc').innerText = d.desc || "";
             document.getElementById('v-owner').innerText = d.ownerName || "TheGioiQR User";
@@ -352,11 +333,9 @@ const app = {
                 const banner = document.getElementById('banner-container');
                 if(banner) banner.classList.add('hidden');
             }
-
             document.getElementById('loading-overlay').classList.add('hidden');
         } catch (e) {
-            document.getElementById('app-root').innerHTML = 
-                `<div class="text-center mt-5 p-4"><h4>Mã QR không tồn tại.</h4></div>`;
+            document.getElementById('app-root').innerHTML = `<div class="text-center mt-5 p-4"><h4>Mã QR không tồn tại.</h4></div>`;
             document.getElementById('loading-overlay').classList.add('hidden');
         }
     },
@@ -366,16 +345,10 @@ const app = {
         const sender = document.getElementById('msg-sender').value || "Ẩn danh";
         const content = document.getElementById('msg-content').value;
         if(!content) return alert("Vui lòng nhập nội dung!");
-
         await addDoc(collection(db, "messages"), {
-            toUid: currentQrData.owner,
-            senderName: sender,
-            content: content,
-            qrTitle: currentQrData.title,
-            createdAt: new Date().toISOString(),
-            read: false
+            toUid: currentQrData.owner, senderName: sender, content: content,
+            qrTitle: currentQrData.title, createdAt: new Date().toISOString(), read: false
         });
-
         alert("Đã gửi tin!");
         bootstrap.Modal.getInstance(document.getElementById('contactModal')).hide();
     },
