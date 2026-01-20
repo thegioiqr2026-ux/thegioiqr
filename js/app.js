@@ -3,7 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, collection, query, where, getDocs, deleteDoc, orderBy, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const APP_VERSION = "0.8"; // Cập nhật Version
+const APP_VERSION = "0.9"; 
 const appInstance = initializeApp(firebaseConfig);
 const auth = getAuth(appInstance);
 const db = getFirestore(appInstance);
@@ -24,10 +24,8 @@ const app = {
         const qrId = urlParams.get('id');
 
         if (qrId) {
-            // Chế độ Viewer
             await this.loadPage('viewer');
             this.loadViewerData(qrId);
-            // Vẫn kiểm tra Auth để cập nhật Menu (nếu lỡ họ đã đăng nhập rồi mà quét mã)
             onAuthStateChanged(auth, async (user) => {
                 if (user) {
                     currentUser = user;
@@ -38,7 +36,6 @@ const app = {
                 }
             });
         } else {
-            // Chế độ Admin
             onAuthStateChanged(auth, async (user) => {
                 if (user) {
                     currentUser = user;
@@ -133,10 +130,8 @@ const app = {
         const sidebarInstance = bootstrap.Offcanvas.getInstance(sidebarEl);
         if (sidebarInstance) sidebarInstance.hide();
 
-        // Nếu đang ở chế độ xem QR mà bấm menu -> Chuyển về Dashboard
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('id')) {
-            // Xóa ID khỏi URL và load lại Dashboard mà không reload trang
             window.history.pushState({}, document.title, window.location.pathname);
             await this.loadPage('dashboard');
         }
@@ -186,6 +181,7 @@ const app = {
         if(img) { const a = document.createElement('a'); a.download = 'QR.png'; a.href = img.src; a.click(); }
     },
 
+    // --- LIST & SEARCH ---
     async loadListQR() {
         const container = document.getElementById('list-container');
         container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm"></div></div>';
@@ -219,11 +215,12 @@ const app = {
                     </div>
                     <div class="small text-muted mb-2" style="font-size: 0.75rem;"><i class="far fa-clock me-1"></i> ${dateStr}</div>
                     <div class="d-flex justify-content-between align-items-center border-top pt-2">
-                        <div class="text-muted small text-truncate pe-2" style="max-width: 60%;">${descDisplay}</div>
+                        <div class="text-muted small text-truncate pe-2" style="max-width: 50%;">${descDisplay}</div>
                         <div class="d-flex gap-1">
-                            <button class="btn btn-sm text-secondary" onclick="window.open('?id=${d.id}', '_blank')"><i class="fas fa-eye fa-lg"></i></button>
-                            <button class="btn btn-sm text-primary" onclick="app.openEdit('${d.id}')"><i class="fas fa-pen fa-lg"></i></button>
-                            <button class="btn btn-sm text-danger" onclick="app.deleteQR('${d.id}')"><i class="fas fa-trash fa-lg"></i></button>
+                            <button class="btn btn-sm text-dark" onclick="app.showQR('${d.id}', '${d.title}')" title="Lấy mã QR"><i class="fas fa-qrcode fa-lg"></i></button>
+                            <button class="btn btn-sm text-secondary" onclick="window.open('?id=${d.id}', '_blank')" title="Xem"><i class="fas fa-eye fa-lg"></i></button>
+                            <button class="btn btn-sm text-primary" onclick="app.openEdit('${d.id}')" title="Sửa"><i class="fas fa-pen fa-lg"></i></button>
+                            <button class="btn btn-sm text-danger" onclick="app.deleteQR('${d.id}')" title="Xóa"><i class="fas fa-trash fa-lg"></i></button>
                         </div>
                     </div>
                 </div>
@@ -235,6 +232,34 @@ const app = {
         const term = document.getElementById('search-qr').value.toLowerCase();
         const filtered = myQrList.filter(qr => (qr.title || "").toLowerCase().includes(term));
         this.renderQRList(filtered);
+    },
+
+    // --- QR SHOW & DOWNLOAD (MỚI) ---
+    showQR(id, title) {
+        document.getElementById('modal-qr-target').innerHTML = ""; // Xóa QR cũ
+        const fullUrl = `${window.location.origin}${window.location.pathname}?id=${id}`;
+        
+        // Tạo QR mới
+        new QRCode(document.getElementById('modal-qr-target'), {
+            text: fullUrl,
+            width: 200,
+            height: 200
+        });
+
+        document.getElementById('modal-qr-title').innerText = title || "Mã QR";
+        new bootstrap.Modal(document.getElementById('qrShowModal')).show();
+    },
+
+    downloadExistingQR() {
+        const img = document.querySelector('#modal-qr-target img');
+        if(img) {
+            const a = document.createElement('a');
+            a.download = 'TheGioiQR.png';
+            a.href = img.src;
+            a.click();
+        } else {
+            alert("Đang tạo ảnh, vui lòng thử lại sau 1 giây.");
+        }
     },
 
     async openEdit(id) {
@@ -316,7 +341,6 @@ const app = {
             if (d.views >= d.viewLimit) {
                 document.getElementById('main-content').classList.add('hidden');
                 document.getElementById('limit-warning').classList.remove('hidden');
-                document.getElementById('loading-overlay').classList.add('hidden');
                 return;
             }
             updateDoc(qrRef, { views: increment(1) });
@@ -349,8 +373,6 @@ const app = {
         bootstrap.Modal.getInstance(document.getElementById('contactModal')).hide();
     },
     
-    // --- SỬA LỖI ĐĂNG NHẬP (QUAN TRỌNG) ---
-    // Hàm này sẽ xóa parameter ?id=... để thoát chế độ Viewer
     showLogin() {
         const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
         window.location.href = cleanUrl;
