@@ -1,72 +1,86 @@
 <div class="container py-3">
-    <h5 class="text-primary fw-bold mb-4"><i class="fas fa-book-reader me-2"></i>Hướng dẫn sử dụng</h5>
+    <div class="text-center mb-4">
+        <h4 class="fw-bold text-primary mb-2">Cách sử dụng Thế giới QR</h4>
+        <p class="text-muted small">Biến tài liệu của bạn thành mã QR chỉ trong 3 bước</p>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="row g-0">
+                <div class="col-3 bg-primary bg-opacity-10 d-flex align-items-center justify-content-center text-primary display-4">
+                    <i class="fas fa-link"></i>
+                </div>
+                <div class="col-9 p-3">
+                    <h6 class="fw-bold text-dark mb-1">Bước 1: Chuẩn bị Link</h6>
+                    <p class="small text-muted mb-2">Upload file của bạn lên <strong>Google Drive</strong>, Dropbox hoặc Youtube.</p>
+                    <div class="alert alert-warning py-2 px-3 mb-0 small border-0 rounded-3">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        <strong>Lưu ý:</strong> Hãy nhớ mở quyền chia sẻ là <u>"Bất kỳ ai có đường liên kết"</u> trước khi copy link.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="row g-0">
+                <div class="col-3 bg-success bg-opacity-10 d-flex align-items-center justify-content-center text-success display-4">
+                    <i class="fas fa-magic"></i>
+                </div>
+                <div class="col-9 p-3">
+                    <h6 class="fw-bold text-dark mb-1">Bước 2: Tạo mã QR</h6>
+                    <p class="small text-muted mb-0">
+                        Vào menu <strong>Tạo mã mới</strong>:<br>
+                        1. Dán Link vừa copy vào ô Link.<br>
+                        2. Nhập tên tài liệu.<br>
+                        3. Bấm nút <strong>Tạo mã ngay</strong>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="row g-0">
+                <div class="col-3 bg-warning bg-opacity-10 d-flex align-items-center justify-content-center text-warning display-4">
+                    <i class="fas fa-qrcode"></i>
+                </div>
+                <div class="col-9 p-3">
+                    <h6 class="fw-bold text-dark mb-1">Bước 3: Tải & In ấn</h6>
+                    <p class="small text-muted mb-0">
+                        Hệ thống sẽ tạo ra ảnh mã QR có logo ở giữa. Bạn hãy bấm <strong>Tải ảnh về máy</strong> để in ra giấy hoặc dán lên thiết bị.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h6 class="fw-bold text-dark mb-3 ps-2 border-start border-4 border-primary">Tính năng quản lý</h6>
     
-    <div class="accordion shadow-sm" id="guideAccordion">
+    <div class="row g-3">
+        <div class="col-6">
+            <div class="p-3 bg-white shadow-sm rounded-4 h-100 border text-center">
+                <div class="text-primary mb-2"><i class="fas fa-pen-to-square fa-2x"></i></div>
+                <div class="fw-bold small">Sửa link</div>
+                <div class="text-muted" style="font-size: 0.7rem;">Cập nhật tài liệu mới mà không cần in lại mã QR.</div>
+            </div>
+        </div>
         
-        <div class="accordion-item border-0 mb-2 rounded overflow-hidden">
-            <h2 class="accordion-header">
-                <button class="accordion-button fw-bold text-dark bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#guide1">
-                    1. Cách tạo mã QR Tài liệu
-                </button>
-            </h2>
-            <div id="guide1" class="accordion-collapse collapse show" data-bs-parent="#guideAccordion">
-                <div class="accordion-body bg-white small text-secondary">
-                    <ul class="ps-3 mb-0">
-                        <li><strong>Bước 1:</strong> Chuẩn bị link tài liệu (Google Drive, Dropbox, Youtube...).</li>
-                        <li><strong>Bước 2:</strong> Vào menu <strong>Tạo mã mới</strong>.</li>
-                        <li><strong>Bước 3:</strong> Nhập Tiêu đề, Mô tả và dán Link vào ô tương ứng.</li>
-                        <li><strong>Bước 4:</strong> Bấm nút <strong>Tạo ngay</strong> và tải ảnh QR về máy để in ấn.</li>
-                    </ul>
-                </div>
+        <div class="col-6">
+            <div class="p-3 bg-white shadow-sm rounded-4 h-100 border text-center">
+                <div class="text-danger mb-2"><i class="fas fa-chart-pie fa-2x"></i></div>
+                <div class="fw-bold small">Thống kê</div>
+                <div class="text-muted" style="font-size: 0.7rem;">Xem số lượt quét và phản hồi từ người xem.</div>
             </div>
         </div>
+    </div>
 
-        <div class="accordion-item border-0 mb-2 rounded overflow-hidden">
-            <h2 class="accordion-header">
-                <button class="accordion-button collapsed fw-bold text-dark bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#guide2">
-                    2. Chỉnh sửa & Xóa mã
-                </button>
-            </h2>
-            <div id="guide2" class="accordion-collapse collapse" data-bs-parent="#guideAccordion">
-                <div class="accordion-body bg-white small text-secondary">
-                    <p>Vào menu <strong>Quản lý mã</strong>, bạn sẽ thấy danh sách các mã đã tạo:</p>
-                    <ul class="ps-3 mb-0">
-                        <li><i class="fas fa-pen text-primary"></i> <strong>Sửa:</strong> Dùng khi bạn muốn thay đổi link tài liệu mới hoặc sửa mô tả mà không muốn in lại mã QR.</li>
-                        <li><i class="fas fa-trash text-danger"></i> <strong>Xóa:</strong> Xóa vĩnh viễn mã khỏi hệ thống.</li>
-                        <li><i class="fas fa-eye text-secondary"></i> <strong>Xem:</strong> Xem thử trang hiển thị thực tế.</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-        <div class="accordion-item border-0 mb-2 rounded overflow-hidden">
-            <h2 class="accordion-header">
-                <button class="accordion-button collapsed fw-bold text-dark bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#guide3">
-                    3. Ý nghĩa các màu sắc
-                </button>
-            </h2>
-            <div id="guide3" class="accordion-collapse collapse" data-bs-parent="#guideAccordion">
-                <div class="accordion-body bg-white small text-secondary">
-                    <ul class="ps-3 mb-0">
-                        <li><span class="badge bg-success">Xanh lá</span> Mã hoạt động tốt, còn nhiều lượt quét.</li>
-                        <li><span class="badge bg-warning text-dark">Vàng</span> Đã dùng hơn 70% lượt quét.</li>
-                        <li><span class="badge bg-danger">Đỏ</span> Đã hết lượt quét (100/100).</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-        <div class="accordion-item border-0 mb-2 rounded overflow-hidden">
-            <h2 class="accordion-header">
-                <button class="accordion-button collapsed fw-bold text-dark bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#guide4">
-                    4. Hộp thư hỗ trợ
-                </button>
-            </h2>
-            <div id="guide4" class="accordion-collapse collapse" data-bs-parent="#guideAccordion">
-                <div class="accordion-body bg-white small text-secondary">
-                    <p>Khi người xem quét mã, họ có thể bấm nút <strong>"Nhắn tin"</strong> để gửi thắc mắc cho bạn. Bạn kiểm tra tại menu <strong>Hộp thư</strong>.</p>
-                </div>
-            </div>
-        </div>
+    <div class="mt-5 text-center p-4 bg-light rounded-4">
+        <p class="small text-muted mb-2">Bạn cần hỗ trợ thêm?</p>
+        <button class="btn btn-white border rounded-pill fw-bold shadow-sm text-primary px-4" onclick="app.nav('inbox')">
+            <i class="fas fa-headset me-2"></i>Liên hệ Admin
+        </button>
     </div>
 </div>
