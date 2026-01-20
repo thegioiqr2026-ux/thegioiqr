@@ -3,7 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, collection, query, where, getDocs, deleteDoc, orderBy, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const APP_VERSION = "0.24"; // QR có khung và tiêu đề nén
+const APP_VERSION = "0.25"; // Fix font chữ thanh mảnh
 const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzDnntVSx2XEPLR5JSOVZYnw47Z-LNCojlDehl4tLmIVI3n_DnPD0T4qoV_WPruJjzc/exec"; 
 
 const appInstance = initializeApp(firebaseConfig);
@@ -134,54 +134,50 @@ const app = {
         if (tabId === 'inbox') this.loadInbox();
     },
 
-    // --- XỬ LÝ ẢNH: THÊM KHUNG, TIÊU ĐỀ & LOGO (MỚI) ---
+    // --- XỬ LÝ ẢNH: KHUNG + TIÊU ĐỀ THANH MẢNH (ĐÃ SỬA) ---
     async addFrameAndTitle(containerId, titleText) {
         const div = document.getElementById(containerId);
         const sourceCanvas = div.querySelector('canvas');
         if (!sourceCanvas) return null;
 
-        // 1. Lưu ảnh QR gốc ra một đối tượng ảnh tạm thời
         const tempImg = new Image();
         tempImg.src = sourceCanvas.toDataURL();
-        // Phải đợi ảnh load xong mới vẽ tiếp được
         await new Promise(r => tempImg.onload = r);
 
         const ctx = sourceCanvas.getContext('2d');
-        const originalSize = sourceCanvas.width; // Kích thước QR gốc (VD: 250px)
+        const originalSize = sourceCanvas.width;
         
-        // --- CẤU HÌNH GIAO DIỆN ---
+        // --- CẤU HÌNH GIAO DIỆN MỚI ---
         const primaryColor = "#4361ee";
-        const frameThickness = 6; // Độ dày khung
-        const bottomBarHeight = 50; // Chiều cao vùng chứa tên bên dưới
-        const titleFontSize = 18;
-        // ---------------------------
+        const textColor = "#2c3e50"; // Màu đen xám (dễ đọc hơn)
+        const frameThickness = 6;
+        const bottomBarHeight = 45; // Giảm chiều cao thanh đáy một chút
+        const titleFontSize = 15; // Giảm size chữ cho mảnh hơn
+        // ------------------------------
 
-        // 2. Tính toán kích thước mới cho Canvas
         const newWidth = originalSize + (frameThickness * 2);
         const newHeight = originalSize + (frameThickness * 2) + bottomBarHeight;
 
-        // Resize Canvas
         sourceCanvas.width = newWidth;
         sourceCanvas.height = newHeight;
 
-        // 3. Tô nền trắng toàn bộ
+        // 1. Tô nền trắng
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, newWidth, newHeight);
 
-        // 4. Vẽ lại ảnh QR gốc vào bên trong khung
-        // Dịch chuyển vào trong một đoạn bằng độ dày khung
+        // 2. Vẽ ảnh QR
         ctx.drawImage(tempImg, frameThickness, frameThickness);
 
-        // 5. Vẽ khung viền ngoài
+        // 3. Vẽ khung viền
         ctx.strokeStyle = primaryColor;
         ctx.lineWidth = frameThickness;
-        // Vẽ lùi vào 1/2 độ dày để nét vẽ không bị liếm ra ngoài canvas
         ctx.strokeRect(frameThickness/2, frameThickness/2, newWidth - frameThickness, newHeight - frameThickness);
 
-        // 6. Vẽ tiêu đề ở đáy (Có nén ngang nếu dài)
+        // 4. Vẽ tiêu đề (Đã Fix lỗi trùng chữ)
         if (titleText) {
-            ctx.fillStyle = primaryColor; // Màu chữ theo màu khung
-            ctx.font = `bold ${titleFontSize}px 'Inter', sans-serif`;
+            ctx.fillStyle = textColor;
+            // Dùng font-weight 500 (Medium) thay vì Bold
+            ctx.font = `500 ${titleFontSize}px 'Inter', sans-serif`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
 
@@ -189,25 +185,12 @@ const app = {
             const textCenterX = newWidth / 2;
             const maxTextWidth = newWidth - (frameThickness * 4); // Padding 2 bên
 
-            // Đo chiều dài thực tế của text
-            const textMetrics = ctx.measureText(titleText);
-            const currentTextWidth = textMetrics.width;
-
-            // Tính tỉ lệ nén (scaleX) nếu text quá dài
-            let scaleX = 1;
-            if (currentTextWidth > maxTextWidth) {
-                scaleX = maxTextWidth / currentTextWidth;
-            }
-
-            // Lưu trạng thái, thực hiện biến hình (nén), vẽ, rồi khôi phục
-            ctx.save();
-            ctx.translate(textCenterX, textCenterY);
-            ctx.scale(scaleX, 1); // Nén ngang
-            ctx.fillText(titleText, 0, 0);
-            ctx.restore();
+            // SỬ DỤNG MAX WIDTH: Để canvas tự động co chữ lại nếu quá dài
+            // Thay vì dùng scale() thủ công gây méo và trùng chữ
+            ctx.fillText(titleText, textCenterX, textCenterY, maxTextWidth);
         }
 
-        // 7. Vẽ Logo trung tâm (THEGIOIQR) - Logic cũ nhưng tính toán lại vị trí tâm
+        // 5. Vẽ Logo THEGIOIQR
         const qrCenterX = frameThickness + (originalSize / 2);
         const qrCenterY = frameThickness + (originalSize / 2);
         
@@ -233,7 +216,7 @@ const app = {
 
     async createQR() {
         if (userData.dailyCount >= userData.dailyLimit) return alert("Hết lượt."); 
-        const title = document.getElementById('inp-title').value || "Tài liệu không tên"; // Fallback nếu không nhập tên
+        const title = document.getElementById('inp-title').value || "Tài liệu không tên"; 
         const link = document.getElementById('inp-link').value; 
         const desc = document.getElementById('inp-desc').value; 
         if (!link) return alert("Thiếu link!");
@@ -247,12 +230,11 @@ const app = {
             const docRef = await addDoc(collection(db, "qr_codes"), { title, desc, link, createdBy: currentUser.uid, ownerName: userData.displayName, createdAt: new Date().toISOString(), views: 0, viewLimit: userData.isVip ? 999999 : 100, qrImageURL: "" });
             const sUrl = `${window.location.origin}${window.location.pathname}?id=${docRef.id}`;
             
-            // Vẽ QR gốc
             document.getElementById('qr-img').innerHTML = ""; 
             new QRCode(document.getElementById('qr-img'), { text: sUrl, width: 250, height: 250, correctLevel: QRCode.CorrectLevel.H }); 
             await new Promise(r => setTimeout(r, 300)); 
             
-            // GỌI HÀM MỚI: Thêm khung và tiêu đề (Async)
+            // Gọi hàm mới
             const imgData = await this.addFrameAndTitle('qr-img', title);
 
             if (imgData) {
@@ -265,14 +247,11 @@ const app = {
         } catch (e) { alert(e.message); } finally { document.getElementById('loading-overlay').classList.add('hidden'); btn.innerText = txt; btn.disabled = false; }
     },
     
-    // Tải ảnh mới tạo
     async dlQR() { 
         const title = document.getElementById('inp-title').value || "TaiLieu";
-        // Gọi lại hàm vẽ để đảm bảo lấy đúng trạng thái cuối cùng
         const imgData = await this.addFrameAndTitle('qr-img', title); 
         if (imgData) {
             const link = document.createElement('a'); link.href = imgData;
-            // Tên file tải về: TheGioiQR_TênTàiLiệu.png
             link.download = `TheGioiQR_${title.replace(/\s+/g, '_')}.png`; 
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
         } else { alert("Lỗi: Không tìm thấy ảnh."); }
@@ -301,7 +280,6 @@ const app = {
     showStoredQR(id, url, title) { 
         document.getElementById('modal-qr-title').innerText = title; const t = document.getElementById('modal-qr-target'); t.innerHTML="";
         if(url && url.length > 10) { 
-            // Ảnh từ Drive đã có sẵn khung rồi, chỉ cần hiện ra
             t.innerHTML = `<img src="${url}" style="width:auto; height:auto; max-width:100%; border-radius:0;" crossorigin="anonymous">`; 
             new bootstrap.Modal(document.getElementById('qrShowModal')).show(); 
         } else { this.showQR(id, title); } 
@@ -313,7 +291,6 @@ const app = {
         setTimeout(async ()=>{ 
             new QRCode(document.getElementById('modal-qr-target'),{text:u,width:250,height:250,correctLevel:QRCode.CorrectLevel.H}); 
             setTimeout(async ()=>{
-                // Gọi hàm vẽ khung mới cho trường hợp tạo lại
                 await this.addFrameAndTitle('modal-qr-target', title);
             },100); 
         },300); 
@@ -339,7 +316,6 @@ const app = {
                     btn.innerHTML = oldTxt; btn.disabled = false; return;
                 }
             } else if (canvas) {
-                // Nếu là canvas (vừa tạo lại), đảm bảo nó đã được vẽ khung
                  imgUrl = await this.addFrameAndTitle('modal-qr-target', title);
             }
 
