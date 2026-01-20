@@ -3,7 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, collection, query, where, getDocs, deleteDoc, orderBy, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const APP_VERSION = "0.6"; 
+const APP_VERSION = "0.7"; 
 const appInstance = initializeApp(firebaseConfig);
 const auth = getAuth(appInstance);
 const db = getFirestore(appInstance);
@@ -12,7 +12,7 @@ const provider = new GoogleAuthProvider();
 let currentUser = null;
 let userData = null;
 let currentQrData = {}; 
-let myQrList = []; // Biến chứa danh sách mã để tìm kiếm local
+let myQrList = [];
 const root = document.getElementById('app-root'); 
 
 const app = {
@@ -34,7 +34,7 @@ const app = {
                     await this.loadPage('dashboard');
                     this.updateSidebar(true);
                     this.nav('create'); 
-                    this.checkUnreadMessages(); // Kiểm tra tin nhắn ngay khi login
+                    this.checkUnreadMessages(); 
                 } else {
                     await this.loadPage('login');
                     this.updateSidebar(false);
@@ -99,18 +99,23 @@ const app = {
     },
 
     async checkUnreadMessages() {
-        // Hàm kiểm tra tin nhắn chưa đọc để hiện Badge đỏ
-        const q = query(collection(db, "messages"), where("toUid", "==", currentUser.uid), where("read", "==", false));
-        const snap = await getDocs(q);
-        const count = snap.size;
-        const badge = document.getElementById('msg-badge');
-        if (badge) {
-            if (count > 0) {
-                badge.innerText = count;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
+        try {
+            // Cần Index: toUid (Asc) + read (Asc)
+            const q = query(collection(db, "messages"), where("toUid", "==", currentUser.uid), where("read", "==", false));
+            const snap = await getDocs(q);
+            const count = snap.size;
+            const badge = document.getElementById('msg-badge');
+            if (badge) {
+                if (count > 0) {
+                    badge.innerText = count;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
             }
+        } catch (error) {
+            console.warn("Chưa có Index cho Badge tin nhắn. Vui lòng xem Console để tạo.");
+            console.error(error); // Bấm vào link lỗi ở đây để tạo Index
         }
     },
 
@@ -165,30 +170,21 @@ const app = {
         if(img) { const a = document.createElement('a'); a.download = 'QR.png'; a.href = img.src; a.click(); }
     },
 
-    // --- LIST & SEARCH ---
     async loadListQR() {
         const container = document.getElementById('list-container');
         container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm"></div></div>';
         
-        // Lấy dữ liệu và lưu vào biến toàn cục để search
         const q = query(collection(db, "qr_codes"), where("createdBy", "==", currentUser.uid), orderBy("createdAt", "desc"));
         const snap = await getDocs(q);
         
         myQrList = [];
-        snap.forEach(doc => {
-            myQrList.push({ id: doc.id, ...doc.data() });
-        });
-
+        snap.forEach(doc => { myQrList.push({ id: doc.id, ...doc.data() }); });
         this.renderQRList(myQrList);
     },
 
-    // Hàm render riêng để tái sử dụng khi search
     renderQRList(dataList) {
         const container = document.getElementById('list-container');
-        if (dataList.length === 0) {
-            container.innerHTML = `<div class="text-center text-muted mt-4"><p>Không tìm thấy mã nào.</p></div>`;
-            return;
-        }
+        if (dataList.length === 0) { container.innerHTML = `<div class="text-center text-muted mt-4"><p>Không tìm thấy mã nào.</p></div>`; return; }
 
         container.innerHTML = "";
         dataList.forEach(d => {
@@ -199,29 +195,17 @@ const app = {
             
             let descDisplay = d.desc || "Chưa có mô tả";
             if(descDisplay.length > 35) descDisplay = descDisplay.substring(0, 35) + "...";
-            
-            // Format ngày giờ
             const dateStr = new Date(d.createdAt).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute:'2-digit'});
 
             container.innerHTML += `
                 <div class="qr-list-item shadow-sm border-0 mb-3" style="border-radius: 12px; padding: 15px; background: #fff;">
                     <div class="d-flex justify-content-between align-items-center mb-1">
-                        <strong class="text-truncate text-primary" style="max-width: 65%; font-size: 1.05rem;">
-                            ${d.title || 'Không tiêu đề'}
-                        </strong>
-                        <span class="badge ${badgeClass} rounded-pill fw-normal" style="font-size: 0.75rem;">
-                            <i class="fas fa-eye me-1"></i>${d.views}/${d.viewLimit}
-                        </span>
+                        <strong class="text-truncate text-primary" style="max-width: 65%; font-size: 1.05rem;">${d.title || 'Không tiêu đề'}</strong>
+                        <span class="badge ${badgeClass} rounded-pill fw-normal" style="font-size: 0.75rem;"><i class="fas fa-eye me-1"></i>${d.views}/${d.viewLimit}</span>
                     </div>
-                    
-                    <div class="small text-muted mb-2" style="font-size: 0.75rem;">
-                        <i class="far fa-clock me-1"></i> ${dateStr}
-                    </div>
-
+                    <div class="small text-muted mb-2" style="font-size: 0.75rem;"><i class="far fa-clock me-1"></i> ${dateStr}</div>
                     <div class="d-flex justify-content-between align-items-center border-top pt-2">
-                        <div class="text-muted small text-truncate pe-2" style="max-width: 60%;">
-                            ${descDisplay}
-                        </div>
+                        <div class="text-muted small text-truncate pe-2" style="max-width: 60%;">${descDisplay}</div>
                         <div class="d-flex gap-1">
                             <button class="btn btn-sm text-secondary" onclick="window.open('?id=${d.id}', '_blank')"><i class="fas fa-eye fa-lg"></i></button>
                             <button class="btn btn-sm text-primary" onclick="app.openEdit('${d.id}')"><i class="fas fa-pen fa-lg"></i></button>
@@ -233,14 +217,13 @@ const app = {
         });
     },
 
-    // Hàm lọc khi gõ phím
     filterList() {
         const term = document.getElementById('search-qr').value.toLowerCase();
         const filtered = myQrList.filter(qr => (qr.title || "").toLowerCase().includes(term));
         this.renderQRList(filtered);
     },
 
-    async openEdit(id) { /* Giữ nguyên code cũ */
+    async openEdit(id) {
         document.getElementById('loading-overlay').classList.remove('hidden');
         try {
             const docRef = doc(db, "qr_codes", id);
@@ -256,7 +239,7 @@ const app = {
         } catch (e) { console.error(e); } finally { document.getElementById('loading-overlay').classList.add('hidden'); }
     },
 
-    async saveEdit() { /* Giữ nguyên code cũ */
+    async saveEdit() {
         const id = document.getElementById('edit-id').value;
         const title = document.getElementById('edit-title').value;
         const desc = document.getElementById('edit-desc').value;
@@ -270,7 +253,7 @@ const app = {
         } catch (e) { alert("Lỗi: " + e.message); }
     },
 
-    async deleteQR(id) { /* Giữ nguyên code cũ */
+    async deleteQR(id) {
         if(confirm("Xóa mã này?")) {
             await deleteDoc(doc(db, "qr_codes", id));
             this.loadListQR();
@@ -279,45 +262,47 @@ const app = {
 
     async loadInbox() {
         const container = document.getElementById('inbox-container');
-        container.innerHTML = 'Đang tải...';
-        const q = query(collection(db, "messages"), where("toUid", "==", currentUser.uid), orderBy("createdAt", "desc"));
-        const snap = await getDocs(q);
+        container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm"></div></div>';
         
-        // Khi mở hộp thư, ẩn badge đi (coi như đã xem hết - hoặc làm tính năng click từng cái để read sau)
-        document.getElementById('msg-badge').classList.add('hidden');
+        try {
+            // Cần Index: toUid (Asc) + createdAt (Desc)
+            const q = query(collection(db, "messages"), where("toUid", "==", currentUser.uid), orderBy("createdAt", "desc"));
+            const snap = await getDocs(q);
+            
+            document.getElementById('msg-badge').classList.add('hidden');
 
-        container.innerHTML = snap.empty ? '<p class="text-center text-muted">Hộp thư trống.</p>' : '';
-        if(!snap.empty) container.innerHTML = '';
+            container.innerHTML = snap.empty ? '<p class="text-center text-muted">Hộp thư trống.</p>' : '';
+            if(!snap.empty) container.innerHTML = '';
 
-        snap.forEach(async docSnap => {
-            const m = docSnap.data();
-            // Đánh dấu đã đọc trong DB (nếu muốn)
-            if (m.read === false) {
-                 await updateDoc(doc(db, "messages", docSnap.id), { read: true });
-            }
+            snap.forEach(async docSnap => {
+                const m = docSnap.data();
+                if (m.read === false) { await updateDoc(doc(db, "messages", docSnap.id), { read: true }); }
 
-            container.innerHTML += `
-                <div class="bg-white p-3 rounded shadow-sm mb-2 border ${m.read ? '' : 'border-primary border-2'}">
-                    <div class="d-flex justify-content-between mb-1">
-                        <strong>${m.senderName}</strong>
-                        <small class="text-muted">${new Date(m.createdAt).toLocaleDateString('vi-VN')}</small>
+                container.innerHTML += `
+                    <div class="bg-white p-3 rounded shadow-sm mb-2 border ${m.read ? '' : 'border-primary border-2'}">
+                        <div class="d-flex justify-content-between mb-1">
+                            <strong>${m.senderName}</strong>
+                            <small class="text-muted">${new Date(m.createdAt).toLocaleDateString('vi-VN')}</small>
+                        </div>
+                        <p class="mb-1 small">${m.content}</p>
+                        <small class="text-primary fst-italic" style="font-size:0.75rem">Mã: ${m.qrTitle}</small>
                     </div>
-                    <p class="mb-1 small">${m.content}</p>
-                    <small class="text-primary fst-italic" style="font-size:0.75rem">Mã: ${m.qrTitle}</small>
-                </div>
-            `;
-        });
-        // Cập nhật lại số đếm = 0
-        this.checkUnreadMessages();
+                `;
+            });
+            this.checkUnreadMessages();
+        } catch (error) {
+            console.error("Lỗi Hộp thư (Thiếu Index):", error);
+            container.innerHTML = `<div class="text-center text-danger p-3"><p>Lỗi: Thiếu Index Database.</p><p class="small">Vui lòng mở Console (F12) bấm vào link lỗi để tạo Index cho Messages.</p></div>`;
+        }
     },
 
-    async loadViewerData(id) { /* Giữ nguyên code cũ */
+    async loadViewerData(id) {
         try {
             const qrRef = doc(db, "qr_codes", id);
             const snap = await getDoc(qrRef);
             if (!snap.exists()) throw new Error("404");
             const d = snap.data();
-            currentQrData = { id: id, owner: d.createdBy, title: d.title }; // Ensure owner ID is captured
+            currentQrData = { id: id, owner: d.createdBy, title: d.title };
             
             if (d.views >= d.viewLimit) {
                 document.getElementById('main-content').classList.add('hidden');
@@ -348,14 +333,9 @@ const app = {
         if(!content) return alert("Vui lòng nhập nội dung!");
 
         await addDoc(collection(db, "messages"), {
-            toUid: currentQrData.owner, // ID người nhận (Admin tạo mã)
-            senderName: sender,
-            content: content,
-            qrTitle: currentQrData.title,
-            createdAt: new Date().toISOString(),
-            read: false // Quan trọng: Mặc định chưa đọc
+            toUid: currentQrData.owner, senderName: sender, content: content,
+            qrTitle: currentQrData.title, createdAt: new Date().toISOString(), read: false
         });
-
         alert("Đã gửi tin!");
         bootstrap.Modal.getInstance(document.getElementById('contactModal')).hide();
     },
