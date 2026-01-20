@@ -3,7 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, collection, query, where, getDocs, deleteDoc, orderBy, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const APP_VERSION = "0.9"; 
+const APP_VERSION = "0.10"; 
 const appInstance = initializeApp(firebaseConfig);
 const auth = getAuth(appInstance);
 const db = getFirestore(appInstance);
@@ -234,31 +234,47 @@ const app = {
         this.renderQRList(filtered);
     },
 
-    // --- QR SHOW & DOWNLOAD (MỚI) ---
+    // --- QR SHOW & DOWNLOAD (NÂNG CẤP) ---
     showQR(id, title) {
-        document.getElementById('modal-qr-target').innerHTML = ""; // Xóa QR cũ
+        document.getElementById('modal-qr-target').innerHTML = ""; 
         const fullUrl = `${window.location.origin}${window.location.pathname}?id=${id}`;
-        
-        // Tạo QR mới
-        new QRCode(document.getElementById('modal-qr-target'), {
-            text: fullUrl,
-            width: 200,
-            height: 200
-        });
-
         document.getElementById('modal-qr-title').innerText = title || "Mã QR";
+        
+        // Hiện Modal trước
         new bootstrap.Modal(document.getElementById('qrShowModal')).show();
+
+        // Đợi 1 chút để modal render xong mới vẽ QR (Tránh lỗi ảnh trắng)
+        setTimeout(() => {
+            new QRCode(document.getElementById('modal-qr-target'), {
+                text: fullUrl,
+                width: 200,
+                height: 200,
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }, 300);
     },
 
     downloadExistingQR() {
-        const img = document.querySelector('#modal-qr-target img');
-        if(img) {
+        const div = document.getElementById('modal-qr-target');
+        // Tìm thẻ img (nếu đã render xong) hoặc thẻ canvas (nếu img chưa tạo)
+        const img = div.querySelector('img');
+        const canvas = div.querySelector('canvas');
+        
+        let imgURI = '';
+
+        if (img && img.src && img.src.startsWith('data:image')) {
+            imgURI = img.src;
+        } else if (canvas) {
+            imgURI = canvas.toDataURL("image/png");
+        }
+
+        if (imgURI) {
             const a = document.createElement('a');
             a.download = 'TheGioiQR.png';
-            a.href = img.src;
+            a.href = imgURI;
             a.click();
         } else {
-            alert("Đang tạo ảnh, vui lòng thử lại sau 1 giây.");
+            alert("Đang tạo ảnh, vui lòng thử lại sau giây lát...");
         }
     },
 
@@ -341,6 +357,7 @@ const app = {
             if (d.views >= d.viewLimit) {
                 document.getElementById('main-content').classList.add('hidden');
                 document.getElementById('limit-warning').classList.remove('hidden');
+                document.getElementById('loading-overlay').classList.add('hidden');
                 return;
             }
             updateDoc(qrRef, { views: increment(1) });
