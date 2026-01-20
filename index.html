@@ -52,12 +52,10 @@
                     <a href="#" class="list-group-item list-group-item-action py-3 border-0" onclick="app.nav('list')">
                         <i class="fas fa-list text-primary me-3"></i> Quản lý mã
                     </a>
-                    
                     <a href="#" class="list-group-item list-group-item-action py-3 border-0 d-flex justify-content-between align-items-center" onclick="app.nav('inbox')">
                         <span><i class="fas fa-envelope text-primary me-3"></i> Hộp thư</span>
                         <span id="msg-badge" class="badge bg-danger rounded-pill hidden">0</span>
                     </a>
-
                      <a href="#" class="list-group-item list-group-item-action py-3 border-0" onclick="app.nav('guide')">
                         <i class="fas fa-book-reader text-primary me-3"></i> Hướng dẫn
                     </a>
@@ -78,9 +76,10 @@
 
     <main id="app-root" class="container-fluid p-0"></main>
 
-    <footer class="app-footer">
-        <div class="fw-bold text-dark">Copyright &copy; 2026 Thế giới QR</div>
-        <div class="text-muted mt-1" style="font-size: 0.65rem;">Phiên bản <span id="app-version" class="badge bg-light text-secondary border">...</span></div>
+    <footer class="app-footer flex-row gap-2">
+        <span class="fw-bold text-dark">© 2026 Thế giới QR</span>
+        <span class="text-muted">|</span>
+        <span class="text-muted" style="font-size: 0.7rem;">v<span id="app-version">...</span></span>
     </footer>
 
     <div class="modal fade" id="contactModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow"><div class="modal-header border-0"><h6 class="modal-title fw-bold">Nhắn tin hỗ trợ</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="text" id="msg-sender" class="form-control mb-3" placeholder="Tên của bạn"><textarea id="msg-content" class="form-control" rows="3" placeholder="Nội dung cần nhắn..."></textarea></div><div class="modal-footer border-0"><button class="btn btn-primary w-100 rounded-pill" onclick="app.sendMsg()">Gửi tin</button></div></div></div></div>
