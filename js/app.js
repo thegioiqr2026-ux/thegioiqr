@@ -3,7 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, collection, query, where, getDocs, deleteDoc, orderBy, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const APP_VERSION = "0.23"; // Bản hoàn thiện + Fix lỗi tải ảnh
+const APP_VERSION = "0.24"; // QR có khung và tiêu đề nén
 const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzDnntVSx2XEPLR5JSOVZYnw47Z-LNCojlDehl4tLmIVI3n_DnPD0T4qoV_WPruJjzc/exec"; 
 
 const appInstance = initializeApp(firebaseConfig);
@@ -55,7 +55,6 @@ const app = {
         }
     },
 
-    // --- LOAD PAGE (CÓ CHỐNG CACHE) ---
     async loadPage(pageName) {
         try {
             const response = await fetch(`pages/${pageName}.html?v=${APP_VERSION}`);
@@ -99,7 +98,6 @@ const app = {
         } catch (e) {}
     },
 
-    // --- HỆ THỐNG ĐIỀU HƯỚNG (NAV) ỔN ĐỊNH ---
     async nav(tabId) {
         const sidebarEl = document.getElementById('sidebar');
         const sidebarInstance = bootstrap.Offcanvas.getInstance(sidebarEl);
@@ -115,14 +113,12 @@ const app = {
             await this.loadPage('dashboard');
         }
 
-        // Tự động load dashboard nếu thiếu
         let targetView = document.getElementById('view-' + tabId);
         if (!targetView) {
             await this.loadPage('dashboard');
             targetView = document.getElementById('view-' + tabId);
         }
         if (!targetView) {
-            // Fallback an toàn
             await this.loadPage('dashboard');
             document.getElementById('view-create').classList.remove('hidden');
             return;
@@ -138,25 +134,127 @@ const app = {
         if (tabId === 'inbox') this.loadInbox();
     },
 
-    // --- XỬ LÝ ẢNH & BRANDING ---
-    addBranding(containerId) {
-        const div = document.getElementById(containerId); const canvas = div.querySelector('canvas'); if (!canvas) return null;
-        const ctx = canvas.getContext('2d'); const size = canvas.width;
-        const text = "THEGIOIQR"; const fontSize = size * 0.08; ctx.font = `900 ${fontSize}px Inter, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        const textWidth = ctx.measureText(text).width; const boxWidth = textWidth + (size * 0.05); const boxHeight = fontSize * 1.8; const centerX = size / 2; const centerY = size / 2;
-        ctx.fillStyle = "#ffffff"; ctx.fillRect(centerX - boxWidth/2, centerY - boxHeight/2, boxWidth, boxHeight);
-        ctx.strokeStyle = "#4361ee"; ctx.lineWidth = 2; ctx.strokeRect(centerX - boxWidth/2, centerY - boxHeight/2, boxWidth, boxHeight);
-        ctx.fillStyle = "#4361ee"; ctx.fillText(text, centerX, centerY); return canvas.toDataURL("image/png");
+    // --- XỬ LÝ ẢNH: THÊM KHUNG, TIÊU ĐỀ & LOGO (MỚI) ---
+    async addFrameAndTitle(containerId, titleText) {
+        const div = document.getElementById(containerId);
+        const sourceCanvas = div.querySelector('canvas');
+        if (!sourceCanvas) return null;
+
+        // 1. Lưu ảnh QR gốc ra một đối tượng ảnh tạm thời
+        const tempImg = new Image();
+        tempImg.src = sourceCanvas.toDataURL();
+        // Phải đợi ảnh load xong mới vẽ tiếp được
+        await new Promise(r => tempImg.onload = r);
+
+        const ctx = sourceCanvas.getContext('2d');
+        const originalSize = sourceCanvas.width; // Kích thước QR gốc (VD: 250px)
+        
+        // --- CẤU HÌNH GIAO DIỆN ---
+        const primaryColor = "#4361ee";
+        const frameThickness = 6; // Độ dày khung
+        const bottomBarHeight = 50; // Chiều cao vùng chứa tên bên dưới
+        const titleFontSize = 18;
+        // ---------------------------
+
+        // 2. Tính toán kích thước mới cho Canvas
+        const newWidth = originalSize + (frameThickness * 2);
+        const newHeight = originalSize + (frameThickness * 2) + bottomBarHeight;
+
+        // Resize Canvas
+        sourceCanvas.width = newWidth;
+        sourceCanvas.height = newHeight;
+
+        // 3. Tô nền trắng toàn bộ
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, newWidth, newHeight);
+
+        // 4. Vẽ lại ảnh QR gốc vào bên trong khung
+        // Dịch chuyển vào trong một đoạn bằng độ dày khung
+        ctx.drawImage(tempImg, frameThickness, frameThickness);
+
+        // 5. Vẽ khung viền ngoài
+        ctx.strokeStyle = primaryColor;
+        ctx.lineWidth = frameThickness;
+        // Vẽ lùi vào 1/2 độ dày để nét vẽ không bị liếm ra ngoài canvas
+        ctx.strokeRect(frameThickness/2, frameThickness/2, newWidth - frameThickness, newHeight - frameThickness);
+
+        // 6. Vẽ tiêu đề ở đáy (Có nén ngang nếu dài)
+        if (titleText) {
+            ctx.fillStyle = primaryColor; // Màu chữ theo màu khung
+            ctx.font = `bold ${titleFontSize}px 'Inter', sans-serif`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            const textCenterY = newHeight - (bottomBarHeight / 2);
+            const textCenterX = newWidth / 2;
+            const maxTextWidth = newWidth - (frameThickness * 4); // Padding 2 bên
+
+            // Đo chiều dài thực tế của text
+            const textMetrics = ctx.measureText(titleText);
+            const currentTextWidth = textMetrics.width;
+
+            // Tính tỉ lệ nén (scaleX) nếu text quá dài
+            let scaleX = 1;
+            if (currentTextWidth > maxTextWidth) {
+                scaleX = maxTextWidth / currentTextWidth;
+            }
+
+            // Lưu trạng thái, thực hiện biến hình (nén), vẽ, rồi khôi phục
+            ctx.save();
+            ctx.translate(textCenterX, textCenterY);
+            ctx.scale(scaleX, 1); // Nén ngang
+            ctx.fillText(titleText, 0, 0);
+            ctx.restore();
+        }
+
+        // 7. Vẽ Logo trung tâm (THEGIOIQR) - Logic cũ nhưng tính toán lại vị trí tâm
+        const qrCenterX = frameThickness + (originalSize / 2);
+        const qrCenterY = frameThickness + (originalSize / 2);
+        
+        const logoText = "THEGIOIQR";
+        const logoFontSize = originalSize * 0.08;
+        ctx.font = `900 ${logoFontSize}px Inter, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        const logoTextWidth = ctx.measureText(logoText).width;
+        const boxWidth = logoTextWidth + (originalSize * 0.05);
+        const boxHeight = logoFontSize * 1.8;
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(qrCenterX - boxWidth/2, qrCenterY - boxHeight/2, boxWidth, boxHeight);
+        ctx.strokeStyle = primaryColor;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(qrCenterX - boxWidth/2, qrCenterY - boxHeight/2, boxWidth, boxHeight);
+        ctx.fillStyle = primaryColor;
+        ctx.fillText(logoText, qrCenterX, qrCenterY);
+
+        return sourceCanvas.toDataURL("image/png");
     },
 
     async createQR() {
-        if (userData.dailyCount >= userData.dailyLimit) return alert("Hết lượt."); const title = document.getElementById('inp-title').value; const link = document.getElementById('inp-link').value; const desc = document.getElementById('inp-desc').value; if (!link) return alert("Thiếu link!");
-        const btn = document.querySelector('#view-create button'); const txt = btn.innerText; btn.innerText = "Đang xử lý..."; btn.disabled = true; document.getElementById('loading-overlay').classList.remove('hidden');
+        if (userData.dailyCount >= userData.dailyLimit) return alert("Hết lượt."); 
+        const title = document.getElementById('inp-title').value || "Tài liệu không tên"; // Fallback nếu không nhập tên
+        const link = document.getElementById('inp-link').value; 
+        const desc = document.getElementById('inp-desc').value; 
+        if (!link) return alert("Thiếu link!");
+
+        const btn = document.querySelector('#view-create button'); 
+        const txt = btn.innerText; 
+        btn.innerText = "Đang xử lý..."; btn.disabled = true; 
+        document.getElementById('loading-overlay').classList.remove('hidden');
+
         try {
             const docRef = await addDoc(collection(db, "qr_codes"), { title, desc, link, createdBy: currentUser.uid, ownerName: userData.displayName, createdAt: new Date().toISOString(), views: 0, viewLimit: userData.isVip ? 999999 : 100, qrImageURL: "" });
             const sUrl = `${window.location.origin}${window.location.pathname}?id=${docRef.id}`;
-            document.getElementById('qr-img').innerHTML = ""; new QRCode(document.getElementById('qr-img'), { text: sUrl, width: 250, height: 250, correctLevel: QRCode.CorrectLevel.H }); await new Promise(r => setTimeout(r, 300));
-            const imgData = this.addBranding('qr-img');
+            
+            // Vẽ QR gốc
+            document.getElementById('qr-img').innerHTML = ""; 
+            new QRCode(document.getElementById('qr-img'), { text: sUrl, width: 250, height: 250, correctLevel: QRCode.CorrectLevel.H }); 
+            await new Promise(r => setTimeout(r, 300)); 
+            
+            // GỌI HÀM MỚI: Thêm khung và tiêu đề (Async)
+            const imgData = await this.addFrameAndTitle('qr-img', title);
+
             if (imgData) {
                  btn.innerText = "Lưu Drive...";
                  const res = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify({ base64: imgData, filename: `QR_${docRef.id}.png` }) });
@@ -167,22 +265,19 @@ const app = {
         } catch (e) { alert(e.message); } finally { document.getElementById('loading-overlay').classList.add('hidden'); btn.innerText = txt; btn.disabled = false; }
     },
     
-    // --- HÀM TẢI ẢNH MỚI TẠO (FIXED) ---
-    dlQR() { 
-        const imgData = this.addBranding('qr-img'); 
+    // Tải ảnh mới tạo
+    async dlQR() { 
+        const title = document.getElementById('inp-title').value || "TaiLieu";
+        // Gọi lại hàm vẽ để đảm bảo lấy đúng trạng thái cuối cùng
+        const imgData = await this.addFrameAndTitle('qr-img', title); 
         if (imgData) {
-            const link = document.createElement('a');
-            link.href = imgData;
-            link.download = `TheGioiQR_${new Date().getTime()}.png`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        } else {
-            alert("Lỗi: Không tìm thấy ảnh.");
-        }
+            const link = document.createElement('a'); link.href = imgData;
+            // Tên file tải về: TheGioiQR_TênTàiLiệu.png
+            link.download = `TheGioiQR_${title.replace(/\s+/g, '_')}.png`; 
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        } else { alert("Lỗi: Không tìm thấy ảnh."); }
     },
     
-    // --- QUẢN LÝ DANH SÁCH ---
     async loadListQR() {
         const c = document.getElementById('list-container'); if(!c) return;
         c.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm"></div></div>';
@@ -206,27 +301,34 @@ const app = {
     showStoredQR(id, url, title) { 
         document.getElementById('modal-qr-title').innerText = title; const t = document.getElementById('modal-qr-target'); t.innerHTML="";
         if(url && url.length > 10) { 
-            t.innerHTML = `<img src="${url}" style="width:200px; height:auto; border-radius:10px;" crossorigin="anonymous">`; 
+            // Ảnh từ Drive đã có sẵn khung rồi, chỉ cần hiện ra
+            t.innerHTML = `<img src="${url}" style="width:auto; height:auto; max-width:100%; border-radius:0;" crossorigin="anonymous">`; 
             new bootstrap.Modal(document.getElementById('qrShowModal')).show(); 
         } else { this.showQR(id, title); } 
     },
+    
     showQR(id, title) { 
         document.getElementById('modal-qr-target').innerHTML=""; const u = `${window.location.origin}${window.location.pathname}?id=${id}`; 
         document.getElementById('modal-qr-title').innerText=title; new bootstrap.Modal(document.getElementById('qrShowModal')).show(); 
-        setTimeout(()=>{ new QRCode(document.getElementById('modal-qr-target'),{text:u,width:250,height:250,correctLevel:QRCode.CorrectLevel.H}); setTimeout(()=>{this.addBranding('modal-qr-target')},100); },300); 
+        setTimeout(async ()=>{ 
+            new QRCode(document.getElementById('modal-qr-target'),{text:u,width:250,height:250,correctLevel:QRCode.CorrectLevel.H}); 
+            setTimeout(async ()=>{
+                // Gọi hàm vẽ khung mới cho trường hợp tạo lại
+                await this.addFrameAndTitle('modal-qr-target', title);
+            },100); 
+        },300); 
     },
 
-    // --- HÀM TẢI ẢNH ĐÃ LƯU (FIXED) ---
     async downloadExistingQR() {
         const div = document.getElementById('modal-qr-target');
         const img = div.querySelector('img');
         const canvas = div.querySelector('canvas');
         const btn = document.querySelector('#qrShowModal .btn-dark'); const oldTxt = btn.innerHTML; btn.innerHTML = "Đang xử lý..."; btn.disabled = true;
+        const title = document.getElementById('modal-qr-title').innerText || "TaiLieu";
 
         try {
             let imgUrl = "";
             if (img && img.src) {
-                // Thử tải qua Fetch để né CORS
                 try {
                     const response = await fetch(img.src, { mode: 'cors' });
                     const blob = await response.blob();
@@ -237,11 +339,13 @@ const app = {
                     btn.innerHTML = oldTxt; btn.disabled = false; return;
                 }
             } else if (canvas) {
-                imgUrl = this.addBranding('modal-qr-target');
+                // Nếu là canvas (vừa tạo lại), đảm bảo nó đã được vẽ khung
+                 imgUrl = await this.addFrameAndTitle('modal-qr-target', title);
             }
 
             if (imgUrl) {
-                const a = document.createElement('a'); a.href = imgUrl; a.download = `TheGioiQR_${new Date().getTime()}.png`;
+                const a = document.createElement('a'); a.href = imgUrl; 
+                a.download = `TheGioiQR_${title.replace(/\s+/g, '_')}.png`;
                 document.body.appendChild(a); a.click(); document.body.removeChild(a);
                 if(img && img.src) window.URL.revokeObjectURL(imgUrl);
             }
