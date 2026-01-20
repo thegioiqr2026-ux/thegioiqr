@@ -3,7 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, collection, query, where, getDocs, deleteDoc, orderBy, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const APP_VERSION = "0.20"; // Update Fix
+const APP_VERSION = "0.21"; // Version Ổn định
 const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzDnntVSx2XEPLR5JSOVZYnw47Z-LNCojlDehl4tLmIVI3n_DnPD0T4qoV_WPruJjzc/exec"; 
 
 const appInstance = initializeApp(firebaseConfig);
@@ -55,18 +55,19 @@ const app = {
         }
     },
 
+    // --- FIX CACHE: THÊM THAM SỐ VERSION VÀO URL ---
     async loadPage(pageName) {
         try {
-            const response = await fetch(`pages/${pageName}.html`);
+            // Thêm ?v=APP_VERSION để trình duyệt luôn tải file mới nhất
+            const response = await fetch(`pages/${pageName}.html?v=${APP_VERSION}`);
             if (!response.ok) throw new Error("Page not found");
             root.innerHTML = await response.text();
         } catch (e) {
             console.error(e);
-            root.innerHTML = "<p class='text-center p-5'>Lỗi tải trang. Vui lòng F5.</p>";
+            root.innerHTML = `<div class="text-center p-5"><i class="fas fa-exclamation-triangle text-warning fa-2x mb-3"></i><p>Lỗi tải trang. Vui lòng kiểm tra mạng hoặc F5.</p></div>`;
         }
     },
 
-    // --- AUTH ---
     async login() { try { await signInWithPopup(auth, provider); } catch (e) { alert(e.message); } },
     async logout() { await signOut(auth); window.location.reload(); },
     
@@ -95,26 +96,19 @@ const app = {
             const q = query(collection(db, "messages"), where("toUid", "==", currentUser.uid), where("read", "==", false));
             const snap = await getDocs(q);
             const badge = document.getElementById('msg-badge');
-            if(badge) {
-                badge.classList.toggle('hidden', snap.size === 0); 
-                badge.innerText = snap.size;
-            }
+            if(badge) { badge.classList.toggle('hidden', snap.size === 0); badge.innerText = snap.size; }
         } catch (e) {}
     },
 
-    // --- NAVIGATION (ĐÃ SỬA LỖI & TỐI ƯU) ---
+    // --- HỆ THỐNG ĐIỀU HƯỚNG (FIX LỖI CHUYỂN TAB) ---
     async nav(tabId) {
         const sidebarEl = document.getElementById('sidebar');
         const sidebarInstance = bootstrap.Offcanvas.getInstance(sidebarEl);
         if (sidebarInstance) sidebarInstance.hide();
 
-        // 1. Xử lý các trang đặc biệt
-        if (tabId === 'feedback') { await this.loadPage('feedback'); return; }
-        if (tabId === 'back_to_viewer') {
-            await this.loadPage('viewer');
-            if (currentQrData.id) this.loadViewerData(currentQrData.id);
-            return;
-        }
+        // 1. Trang đặc biệt
+        if (tabId === 'feedback') { await this.loadPage('feedback'); setTimeout(() => { const t = document.getElementById('fb-qr-title'); if(t) t.innerText = currentQrData.title ? `Về: ${currentQrData.title}` : "Góp ý chung"; }, 100); return; }
+        if (tabId === 'back_to_viewer') { await this.loadPage('viewer'); if (currentQrData.id) this.loadViewerData(currentQrData.id); return; }
         if (tabId === 'guide') { await this.loadPage('huongdan'); return; }
 
         // 2. Reset URL nếu đang ở chế độ xem
@@ -124,35 +118,35 @@ const app = {
             await this.loadPage('dashboard');
         }
 
-        // 3. Đảm bảo Dashboard đã load
-        // Sửa lỗi: Kiểm tra kỹ xem view-create có tồn tại không, nếu không thì load lại dashboard
-        if (!document.getElementById('view-create')) { 
-            await this.loadPage('dashboard'); 
+        // 3. Kiểm tra xem Tab đích có tồn tại trong HTML hiện tại không
+        // Nếu không (VD: đang ở trang Hướng dẫn), phải load lại Dashboard
+        let targetView = document.getElementById('view-' + tabId);
+        if (!targetView) {
+            await this.loadPage('dashboard');
+            targetView = document.getElementById('view-' + tabId);
         }
 
-        // 4. Chuyển Tab (Ẩn tất cả -> Hiện tab chọn)
+        // Nếu vẫn không thấy thì báo lỗi (tránh treo app)
+        if (!targetView) {
+            console.error(`Không tìm thấy view-${tabId}. Vui lòng kiểm tra file dashboard.html`);
+            alert("Lỗi giao diện. Đang tải lại...");
+            window.location.reload();
+            return;
+        }
+
+        // 4. Ẩn tất cả các tab khác -> Hiện tab đích
         ['view-create', 'view-list', 'view-inbox'].forEach(id => {
-            const el = document.getElementById(id); 
+            const el = document.getElementById(id);
             if(el) el.classList.add('hidden');
         });
-        
-        const target = document.getElementById('view-' + tabId);
-        if(target) {
-            target.classList.remove('hidden');
-        } else {
-            console.error("Không tìm thấy tab: " + tabId);
-            // Fallback: Nếu lỗi không tìm thấy view thì load lại dashboard
-            await this.loadPage('dashboard');
-            document.getElementById('view-create').classList.remove('hidden');
-            return; 
-        }
+        targetView.classList.remove('hidden');
 
-        // 5. Load dữ liệu cho từng tab
+        // 5. Load dữ liệu
         if (tabId === 'list') this.loadListQR();
         if (tabId === 'inbox') this.loadInbox();
     },
 
-    // --- LOGIC ---
+    // --- CÁC HÀM XỬ LÝ (GIỮ NGUYÊN) ---
     addBranding(containerId) {
         const div = document.getElementById(containerId); const canvas = div.querySelector('canvas'); if (!canvas) return null;
         const ctx = canvas.getContext('2d'); const size = canvas.width;
@@ -180,115 +174,39 @@ const app = {
             document.getElementById('new-qr').classList.remove('hidden'); document.getElementById('inp-title').value = ""; document.getElementById('inp-link').value = "";
         } catch (e) { alert(e.message); } finally { document.getElementById('loading-overlay').classList.add('hidden'); btn.innerText = txt; btn.disabled = false; }
     },
-    
     dlQR() { const img = document.querySelector('#qr-img img'); if(img) { const a = document.createElement('a'); a.download = 'TheGioiQR.png'; a.href = img.src; a.click(); } },
     
-    // --- LOAD LIST QR (FIX LỖI) ---
     async loadListQR() {
-        const container = document.getElementById('list-container');
-        if (!container) return; // Bảo vệ nếu container chưa load
-        
-        container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm"></div></div>';
-        
-        if (!currentUser) {
-            container.innerHTML = '<p class="text-center text-danger">Vui lòng đăng nhập lại.</p>';
-            return;
-        }
-
+        const c = document.getElementById('list-container'); if(!c) return;
+        c.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm"></div></div>';
+        if (!currentUser) { c.innerHTML = '<p class="text-center text-danger">Vui lòng đăng nhập lại.</p>'; return; }
         try {
             const q = query(collection(db, "qr_codes"), where("createdBy", "==", currentUser.uid), orderBy("createdAt", "desc"));
-            const snap = await getDocs(q);
-            
-            myQrList = [];
-            snap.forEach(doc => myQrList.push({ id: doc.id, ...doc.data() }));
-            
-            this.renderQRList(myQrList);
-        } catch (e) {
-            console.error(e);
-            // Nếu lỗi Index, hiển thị hướng dẫn
-            if (e.message.includes("index")) {
-                container.innerHTML = '<p class="text-center text-danger small">Lỗi: Thiếu Index Database.<br>Vui lòng mở Console (F12) để lấy link tạo Index.</p>';
-            } else {
-                container.innerHTML = '<p class="text-center text-muted">Chưa có dữ liệu.</p>';
-            }
-        }
+            const s = await getDocs(q); myQrList = []; s.forEach(d => myQrList.push({ id: d.id, ...d.data() })); this.renderQRList(myQrList);
+        } catch (e) { c.innerHTML = '<div class="text-center text-muted py-4">Chưa có dữ liệu hoặc lỗi kết nối.</div>'; console.error(e); }
     },
-
+    
     renderQRList(list) {
-        const c = document.getElementById('list-container'); 
-        if(!c) return;
-        if(list.length===0) {c.innerHTML='<div class="text-center text-muted py-4">Bạn chưa tạo mã QR nào.</div>'; return;} 
-        c.innerHTML="";
-        
+        const c = document.getElementById('list-container'); if(!c) return;
+        if(list.length===0) {c.innerHTML='<div class="text-center text-muted py-4">Bạn chưa tạo mã QR nào.</div>'; return;} c.innerHTML="";
         list.forEach(d => {
-            // Check an toàn dữ liệu
-            const title = d.title || 'Không tiêu đề';
-            const views = d.views || 0;
-            const limit = d.viewLimit || 100;
-            const date = d.createdAt ? new Date(d.createdAt).toLocaleDateString('vi-VN') : '---';
-            const imgUrl = d.qrImageURL || '';
-
-            c.innerHTML += `
-            <div class="qr-list-item shadow-sm border-0 mb-3" style="border-radius:12px;padding:15px;background:#fff;">
-                <div class="d-flex justify-content-between mb-1">
-                    <strong class="text-primary text-truncate" style="max-width:65%">${title}</strong>
-                    <span class="badge bg-success rounded-pill">${views}/${limit}</span>
-                </div>
-                <div class="small text-muted mb-2">${date}</div>
-                <div class="d-flex justify-content-between pt-2 border-top">
-                    <div class="text-truncate small text-muted pe-2" style="max-width:50%">${d.desc||''}</div>
-                    <div class="d-flex gap-1">
-                        <button class="btn btn-sm text-dark" onclick="app.showStoredQR('${d.id}','${imgUrl}','${title}')" title="Xem mã"><i class="fas fa-qrcode"></i></button>
-                        <button class="btn btn-sm text-secondary" onclick="window.open('?id=${d.id}','_blank')" title="Xem trang"><i class="fas fa-eye"></i></button>
-                        <button class="btn btn-sm text-primary" onclick="app.openEdit('${d.id}')"><i class="fas fa-pen"></i></button>
-                        <button class="btn btn-sm text-danger" onclick="app.deleteQR('${d.id}')"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>
-            </div>`;
+            c.innerHTML += `<div class="qr-list-item shadow-sm border-0 mb-3" style="border-radius:12px;padding:15px;background:#fff;"><div class="d-flex justify-content-between mb-1"><strong class="text-primary text-truncate" style="max-width:65%">${d.title||'No Title'}</strong><span class="badge bg-success rounded-pill">${d.views||0}/${d.viewLimit||100}</span></div><div class="small text-muted mb-2">${d.createdAt ? new Date(d.createdAt).toLocaleDateString('vi-VN') : '--'}</div><div class="d-flex justify-content-between pt-2 border-top"><div class="text-truncate small text-muted pe-2" style="max-width:50%">${d.desc||''}</div><div class="d-flex gap-1"><button class="btn btn-sm text-dark" onclick="app.showStoredQR('${d.id}','${d.qrImageURL||''}','${d.title}')"><i class="fas fa-qrcode"></i></button><button class="btn btn-sm text-secondary" onclick="window.open('?id=${d.id}','_blank')"><i class="fas fa-eye"></i></button><button class="btn btn-sm text-primary" onclick="app.openEdit('${d.id}')"><i class="fas fa-pen"></i></button><button class="btn btn-sm text-danger" onclick="app.deleteQR('${d.id}')"><i class="fas fa-trash"></i></button></div></div></div>`;
         });
     },
-
     filterList() { const t = document.getElementById('search-qr').value.toLowerCase(); this.renderQRList(myQrList.filter(q => (q.title||"").toLowerCase().includes(t))); },
-    
-    showStoredQR(id, url, title) { 
-        document.getElementById('modal-qr-title').innerText = title; 
-        const t = document.getElementById('modal-qr-target'); 
-        t.innerHTML = "";
-        
-        if(url && url.length > 10) { 
-            // Có link ảnh từ Drive
-            t.innerHTML = `<img src="${url}" style="width:200px; height:auto; border-radius:10px;" crossorigin="anonymous">`; 
-            new bootstrap.Modal(document.getElementById('qrShowModal')).show(); 
-        } else { 
-            // Không có link, tạo lại
-            this.showQR(id, title); 
-        } 
-    },
-    
-    showQR(id, title) { 
-        document.getElementById('modal-qr-target').innerHTML=""; 
-        const u = `${window.location.origin}${window.location.pathname}?id=${id}`; 
-        document.getElementById('modal-qr-title').innerText=title; 
-        new bootstrap.Modal(document.getElementById('qrShowModal')).show(); 
-        setTimeout(()=>{ 
-            new QRCode(document.getElementById('modal-qr-target'),{text:u,width:250,height:250,correctLevel:QRCode.CorrectLevel.H}); 
-            setTimeout(()=>{this.addBranding('modal-qr-target')},100); 
-        },300); 
-    },
-    
+    showStoredQR(id, url, title) { document.getElementById('modal-qr-title').innerText = title; const t = document.getElementById('modal-qr-target'); if(url) { t.innerHTML = `<img src="${url}" style="width:200px;crossorigin='anonymous'">`; new bootstrap.Modal(document.getElementById('qrShowModal')).show(); } else this.showQR(id, title); },
+    showQR(id, title) { document.getElementById('modal-qr-target').innerHTML=""; const u = `${window.location.origin}${window.location.pathname}?id=${id}`; document.getElementById('modal-qr-title').innerText=title; new bootstrap.Modal(document.getElementById('qrShowModal')).show(); setTimeout(()=>{ new QRCode(document.getElementById('modal-qr-target'),{text:u,width:250,height:250,correctLevel:QRCode.CorrectLevel.H}); setTimeout(()=>{this.addBranding('modal-qr-target')},100); },300); },
     downloadExistingQR() { const d=document.getElementById('modal-qr-target'); const i=d.querySelector('img'); const c=d.querySelector('canvas'); if(i&&i.src) { fetch(i.src).then(r=>r.blob()).then(b=>{const u=window.URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='QR.png';document.body.appendChild(a);a.click();window.URL.revokeObjectURL(u);}).catch(()=>alert('Giữ ảnh để lưu')); return; } if(c) {const a=document.createElement('a');a.download='QR.png';a.href=c.toDataURL('image/png');a.click();} },
-    
     async openEdit(id) { try{const d = await getDoc(doc(db,"qr_codes",id)); if(d.exists()){const dt=d.data(); document.getElementById('edit-id').value=id;document.getElementById('edit-title').value=dt.title;document.getElementById('edit-desc').value=dt.desc;document.getElementById('edit-link').value=dt.link;new bootstrap.Modal(document.getElementById('editModal')).show();} }catch(e){} },
-    async saveEdit() { const id=document.getElementById('edit-id').value; const t=document.getElementById('edit-title').value; const d=document.getElementById('edit-desc').value; const l=document.getElementById('edit-link').value; await updateDoc(doc(db,"qr_codes",id),{title:t,desc:d,link:l}); bootstrap.Modal.getInstance(document.getElementById('editModal')).hide(); this.loadListQR(); alert('Đã cập nhật!'); },
-    async deleteQR(id) { if(confirm('Bạn có chắc muốn xóa?')) { await deleteDoc(doc(db,"qr_codes",id)); this.loadListQR(); } },
+    async saveEdit() { const id=document.getElementById('edit-id').value; const t=document.getElementById('edit-title').value; const d=document.getElementById('edit-desc').value; const l=document.getElementById('edit-link').value; await updateDoc(doc(db,"qr_codes",id),{title:t,desc:d,link:l}); bootstrap.Modal.getInstance(document.getElementById('editModal')).hide(); this.loadListQR(); alert('Xong'); },
+    async deleteQR(id) { if(confirm('Xóa?')) { await deleteDoc(doc(db,"qr_codes",id)); this.loadListQR(); } },
     
     async loadInbox() {
         const c = document.getElementById('inbox-container'); if(!c) return; c.innerHTML='Loading...';
         try {
             const q = query(collection(db,"messages"), where("toUid","==",currentUser.uid), orderBy("createdAt","desc"));
             const s = await getDocs(q); document.getElementById('msg-badge').classList.add('hidden');
-            if(s.empty) {c.innerHTML='<p class="text-center text-muted">Hộp thư trống.</p>'; return;} 
-            c.innerHTML="";
+            if(s.empty) {c.innerHTML='<p class="text-center text-muted">Hộp thư trống.</p>'; return;} c.innerHTML="";
             s.forEach(async d => {
                 const m = d.data(); if(m.read===false) await updateDoc(doc(db,"messages",d.id),{read:true});
                 const bd = m.type==='feedback' ? 'border-success bg-success bg-opacity-10' : 'border-primary bg-white';
