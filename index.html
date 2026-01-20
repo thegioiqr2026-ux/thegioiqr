@@ -84,8 +84,28 @@
         <span class="text-muted" style="font-size: 0.7rem;">v<span id="app-version">...</span></span>
     </footer>
 
-    <div class="modal fade" id="contactModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow"><div class="modal-header border-0"><h6 class="modal-title fw-bold">Nhắn tin hỗ trợ</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="text" id="msg-sender" class="form-control mb-3" placeholder="Tên của bạn"><textarea id="msg-content" class="form-control" rows="3" placeholder="Nội dung cần nhắn..."></textarea></div><div class="modal-footer border-0"><button class="btn btn-primary w-100 rounded-pill" onclick="app.sendMsg()">Gửi tin</button></div></div></div></div>
-    
+    <div class="modal fade" id="contactModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h6 class="modal-title fw-bold text-primary"><i class="fas fa-comment-alt me-2"></i>Nhắn tin cho tác giả</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <input type="text" id="msg-sender" class="form-control" placeholder="Tên của bạn">
+                    </div>
+                    <div class="mb-3">
+                        <textarea id="msg-content" class="form-control" rows="4" placeholder="Nhập câu hỏi hoặc nội dung cần hỗ trợ..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button class="btn btn-primary w-100 rounded-pill fw-bold" onclick="app.sendMsg()">Gửi tin nhắn</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="editModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow"><div class="modal-header border-0"><h6 class="modal-title fw-bold">Sửa mã QR</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="hidden" id="edit-id"><div class="mb-3"><label class="small fw-bold text-muted">Tiêu đề</label><input type="text" id="edit-title" class="form-control"></div><div class="mb-3"><label class="small fw-bold text-muted">Mô tả</label><textarea id="edit-desc" class="form-control" rows="3"></textarea></div><div class="mb-3"><label class="small fw-bold text-muted">Link đích</label><input type="url" id="edit-link" class="form-control"></div></div><div class="modal-footer border-0"><button class="btn btn-primary w-100 rounded-pill" onclick="app.saveEdit()">Lưu thay đổi</button></div></div></div></div>
 
     <div class="modal fade" id="qrShowModal" tabindex="-1">
@@ -96,8 +116,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body text-center bg-light">
-                    <div id="modal-qr-target" class="bg-white p-3 rounded shadow-sm d-inline-block mx-auto">
-                        </div>
+                    <div id="modal-qr-target" class="bg-white p-3 rounded shadow-sm d-inline-block mx-auto"></div>
                     <div class="mt-3 small text-secondary fw-bold" id="modal-qr-title"></div>
                 </div>
                 <div class="modal-footer border-0">
