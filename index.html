@@ -35,40 +35,52 @@
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
         <div class="offcanvas-body p-0">
+            
             <div id="menu-user" class="hidden">
                 <div class="p-3 bg-light bg-opacity-50 border-bottom mb-2">
                     <div class="d-flex align-items-center">
-                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width:45px; height:45px; font-weight:bold;"><i class="fas fa-user"></i></div>
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width:45px; height:45px; font-weight:bold;">
+                            <i class="fas fa-user"></i>
+                        </div>
                         <div style="overflow: hidden;">
                             <div class="fw-bold text-truncate text-dark" id="u-name">User</div>
                             <small class="text-muted" style="font-size: 0.8rem;">Quota: <span id="u-quota" class="badge bg-primary rounded-pill">0/5</span></small>
                         </div>
                     </div>
                 </div>
+                
                 <div class="list-group list-group-flush">
-                    <a href="#" class="list-group-item list-group-item-action py-3 border-0" onclick="app.nav('create')">
+                    <a href="#" class="list-group-item list-group-item-action py-3 border-0" onclick="app.nav('create'); return false;">
                         <i class="fas fa-plus-circle text-primary me-3"></i> Tạo mã mới
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action py-3 border-0" onclick="app.nav('list')">
+                    
+                    <a href="#" class="list-group-item list-group-item-action py-3 border-0" onclick="app.nav('list'); return false;">
                         <i class="fas fa-list text-primary me-3"></i> Quản lý mã
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action py-3 border-0 d-flex justify-content-between align-items-center" onclick="app.nav('inbox')">
+                    
+                    <a href="#" class="list-group-item list-group-item-action py-3 border-0 d-flex justify-content-between align-items-center" onclick="app.nav('inbox'); return false;">
                         <span><i class="fas fa-envelope text-primary me-3"></i> Hộp thư</span>
                         <span id="msg-badge" class="badge bg-danger rounded-pill hidden">0</span>
                     </a>
-                     <a href="#" class="list-group-item list-group-item-action py-3 border-0" onclick="app.nav('guide')">
+
+                    <a href="#" class="list-group-item list-group-item-action py-3 border-0" onclick="app.nav('guide'); return false;">
                         <i class="fas fa-book-reader text-primary me-3"></i> Hướng dẫn
                     </a>
+                    
                     <div class="border-top my-2"></div>
-                    <a href="#" class="list-group-item list-group-item-action py-3 border-0 text-danger fw-bold" onclick="app.logout()">
+                    
+                    <a href="#" class="list-group-item list-group-item-action py-3 border-0 text-danger fw-bold" onclick="app.logout(); return false;">
                         <i class="fas fa-sign-out-alt me-3"></i> Đăng xuất
                     </a>
                 </div>
             </div>
+
             <div id="menu-guest" class="p-4 text-center">
-                <div class="mb-4 text-primary opacity-50"><i class="fas fa-shield-alt fa-4x"></i></div>
+                <div class="mb-4 text-primary opacity-50">
+                    <i class="fas fa-shield-alt fa-4x"></i>
+                </div>
                 <h6 class="fw-bold text-dark">Xin chào!</h6>
-                <p class="small text-muted mb-4">Bạn muốn tạo mã QR của riêng mình?</p>
+                <p class="small text-muted mb-4">Vui lòng đăng nhập để quản lý mã QR.</p>
                 <button class="btn btn-primary w-100 rounded-pill shadow-sm fw-bold" onclick="app.showLogin()">
                     Đăng nhập / Đăng ký
                 </button>
@@ -106,7 +118,34 @@
         </div>
     </div>
 
-    <div class="modal fade" id="editModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow"><div class="modal-header border-0"><h6 class="modal-title fw-bold">Sửa mã QR</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="hidden" id="edit-id"><div class="mb-3"><label class="small fw-bold text-muted">Tiêu đề</label><input type="text" id="edit-title" class="form-control"></div><div class="mb-3"><label class="small fw-bold text-muted">Mô tả</label><textarea id="edit-desc" class="form-control" rows="3"></textarea></div><div class="mb-3"><label class="small fw-bold text-muted">Link đích</label><input type="url" id="edit-link" class="form-control"></div></div><div class="modal-footer border-0"><button class="btn btn-primary w-100 rounded-pill" onclick="app.saveEdit()">Lưu thay đổi</button></div></div></div></div>
+    <div class="modal fade" id="editModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-0">
+                    <h6 class="modal-title fw-bold">Sửa mã QR</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="edit-id">
+                    <div class="mb-3">
+                        <label class="small fw-bold text-muted">Tiêu đề</label>
+                        <input type="text" id="edit-title" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="small fw-bold text-muted">Mô tả</label>
+                        <textarea id="edit-desc" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small fw-bold text-muted">Link đích</label>
+                        <input type="url" id="edit-link" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button class="btn btn-primary w-100 rounded-pill" onclick="app.saveEdit()">Lưu thay đổi</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="modal fade" id="qrShowModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
