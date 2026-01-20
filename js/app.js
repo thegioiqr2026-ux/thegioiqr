@@ -3,7 +3,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, collection, query, where, getDocs, deleteDoc, orderBy, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const APP_VERSION = "0.11"; 
+// --- CẤU HÌNH ---
+const APP_VERSION = "0.14"; 
+
+// LINK API GOOGLE APPS SCRIPT CỦA BẠN (ĐÃ CẬP NHẬT)
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzDnntVSx2XEPLR5JSOVZYnw47Z-LNCojlDehl4tLmIVI3n_DnPD0T4qoV_WPruJjzc/exec"; 
+
 const appInstance = initializeApp(firebaseConfig);
 const auth = getAuth(appInstance);
 const db = getFirestore(appInstance);
@@ -151,49 +156,41 @@ const app = {
         if (tabId === 'inbox') this.loadInbox();
     },
 
-    // --- HÀM XỬ LÝ VẼ CHỮ VÀO GIỮA QR (CORE) ---
+    // --- HÀM VẼ CHỮ VÀO GIỮA QR ---
     addBranding(containerId) {
         const div = document.getElementById(containerId);
         const canvas = div.querySelector('canvas');
-        if (!canvas) return;
+        if (!canvas) return null;
 
         const ctx = canvas.getContext('2d');
         const size = canvas.width;
         
-        // Cấu hình chữ
         const text = "THEGIOIQR";
-        const fontSize = size * 0.08; // Chữ chiếm 8% kích thước QR
-        ctx.font = `900 ${fontSize}px Inter, sans-serif`; // Font đậm
+        const fontSize = size * 0.08;
+        ctx.font = `900 ${fontSize}px Inter, sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
 
-        // Tính toán kích thước hộp nền
         const textWidth = ctx.measureText(text).width;
-        const boxWidth = textWidth + (size * 0.05); // Padding
+        const boxWidth = textWidth + (size * 0.05);
         const boxHeight = fontSize * 1.8;
         const centerX = size / 2;
         const centerY = size / 2;
 
-        // Vẽ hộp nền trắng (Bo góc nhẹ nếu muốn, ở đây vẽ chữ nhật cho đơn giản và an toàn)
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(centerX - boxWidth/2, centerY - boxHeight/2, boxWidth, boxHeight);
         
-        // Vẽ viền hộp (Optional - cho đẹp)
         ctx.strokeStyle = "#4361ee";
         ctx.lineWidth = 2;
         ctx.strokeRect(centerX - boxWidth/2, centerY - boxHeight/2, boxWidth, boxHeight);
 
-        // Vẽ chữ
-        ctx.fillStyle = "#4361ee"; // Màu xanh thương hiệu
+        ctx.fillStyle = "#4361ee";
         ctx.fillText(text, centerX, centerY);
 
-        // Cập nhật lại thẻ IMG (để người dùng tải về được ảnh đã có chữ)
-        const img = div.querySelector('img');
-        if (img) {
-            img.src = canvas.toDataURL("image/png");
-        }
+        return canvas.toDataURL("image/png");
     },
 
+    // --- TẠO MÃ QR & UPLOAD LÊN GOOGLE DRIVE ---
     async createQR() {
         if (userData.dailyCount >= userData.dailyLimit) return alert("Hết lượt tạo hôm nay.");
         const title = document.getElementById('inp-title').value;
@@ -201,35 +198,69 @@ const app = {
         const desc = document.getElementById('inp-desc').value;
         if (!link) return alert("Thiếu link!");
 
+        const btnCreate = document.querySelector('#view-create button');
+        const originalText = btnCreate.innerText;
+        btnCreate.innerText = "Đang xử lý...";
+        btnCreate.disabled = true;
         document.getElementById('loading-overlay').classList.remove('hidden');
+
         try {
+            // 1. Tạo Document trong Firestore
             const docRef = await addDoc(collection(db, "qr_codes"), {
                 title, desc, link, createdBy: currentUser.uid, ownerName: userData.displayName,
-                createdAt: new Date().toISOString(), views: 0, viewLimit: userData.isVip ? 999999 : 100
+                createdAt: new Date().toISOString(), views: 0, viewLimit: userData.isVip ? 999999 : 100,
+                qrImageURL: "" 
             });
+
+            const shortUrl = `${window.location.origin}${window.location.pathname}?id=${docRef.id}`;
+            
+            // 2. Vẽ QR
+            document.getElementById('qr-img').innerHTML = "";
+            new QRCode(document.getElementById('qr-img'), { text: shortUrl, width: 250, height: 250, correctLevel: QRCode.CorrectLevel.H });
+            await new Promise(r => setTimeout(r, 300)); // Đợi vẽ xong
+            
+            // 3. Lấy ảnh Base64 (Đã có chữ THEGIOIQR)
+            const imageData = this.addBranding('qr-img'); 
+
+            if (imageData) {
+                // 4. GỬI SANG GOOGLE APPS SCRIPT
+                btnCreate.innerText = "Đang lưu Drive...";
+                
+                const response = await fetch(GAS_API_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        base64: imageData,
+                        filename: `QR_${docRef.id}.png`
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.status === "success") {
+                    // 5. Cập nhật URL từ Drive về Firestore
+                    await updateDoc(docRef, { qrImageURL: result.url });
+                } else {
+                    console.error("Lỗi Drive:", result.message);
+                    alert("Cảnh báo: Không lưu được ảnh vào Drive (Lỗi API).");
+                }
+            }
+
+            // 6. Cập nhật Quota
             await updateDoc(doc(db, "users", currentUser.uid), { dailyCount: userData.dailyCount + 1 });
             userData.dailyCount++;
             document.getElementById('u-quota').innerText = `${userData.dailyCount}/${userData.dailyLimit}`;
 
-            const shortUrl = `${window.location.origin}${window.location.pathname}?id=${docRef.id}`;
-            document.getElementById('qr-img').innerHTML = "";
-            
-            // TẠO QR VỚI MỨC ĐỘ SỬA LỖI CAO (H)
-            new QRCode(document.getElementById('qr-img'), { 
-                text: shortUrl, 
-                width: 180, 
-                height: 180,
-                correctLevel: QRCode.CorrectLevel.H // QUAN TRỌNG: Mức H cho phép che 30%
-            });
-
-            // Chèn chữ sau khi vẽ xong
-            setTimeout(() => {
-                this.addBranding('qr-img');
-            }, 100);
-
             document.getElementById('new-qr').classList.remove('hidden');
             document.getElementById('inp-title').value = ""; document.getElementById('inp-link').value = "";
-        } catch (e) { alert("Lỗi: " + e.message); } finally { document.getElementById('loading-overlay').classList.add('hidden'); }
+
+        } catch (e) { 
+            console.error(e);
+            alert("Lỗi: " + e.message); 
+        } finally { 
+            document.getElementById('loading-overlay').classList.add('hidden');
+            btnCreate.innerText = originalText;
+            btnCreate.disabled = false;
+        }
     },
 
     dlQR() {
@@ -237,7 +268,6 @@ const app = {
         if(img) { const a = document.createElement('a'); a.download = 'TheGioiQR.png'; a.href = img.src; a.click(); }
     },
 
-    // --- LIST & SEARCH ---
     async loadListQR() {
         const container = document.getElementById('list-container');
         container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm"></div></div>';
@@ -273,7 +303,7 @@ const app = {
                     <div class="d-flex justify-content-between align-items-center border-top pt-2">
                         <div class="text-muted small text-truncate pe-2" style="max-width: 50%;">${descDisplay}</div>
                         <div class="d-flex gap-1">
-                            <button class="btn btn-sm text-dark" onclick="app.showQR('${d.id}', '${d.title}')" title="Lấy mã QR"><i class="fas fa-qrcode fa-lg"></i></button>
+                            <button class="btn btn-sm text-dark" onclick="app.showStoredQR('${d.id}', '${d.qrImageURL || ''}', '${d.title}')" title="Lấy mã QR"><i class="fas fa-qrcode fa-lg"></i></button>
                             <button class="btn btn-sm text-secondary" onclick="window.open('?id=${d.id}', '_blank')" title="Xem"><i class="fas fa-eye fa-lg"></i></button>
                             <button class="btn btn-sm text-primary" onclick="app.openEdit('${d.id}')" title="Sửa"><i class="fas fa-pen fa-lg"></i></button>
                             <button class="btn btn-sm text-danger" onclick="app.deleteQR('${d.id}')" title="Xóa"><i class="fas fa-trash fa-lg"></i></button>
@@ -290,7 +320,21 @@ const app = {
         this.renderQRList(filtered);
     },
 
-    // --- QR SHOW & DOWNLOAD (CÓ BRANDING) ---
+    showStoredQR(id, imgUrl, title) {
+        document.getElementById('modal-qr-title').innerText = title || "Mã QR";
+        const target = document.getElementById('modal-qr-target');
+        target.innerHTML = "";
+
+        if (imgUrl) {
+            // Hiển thị ảnh từ Drive
+            target.innerHTML = `<img src="${imgUrl}" style="width:200px; height:200px; object-fit:contain;" crossorigin="anonymous">`;
+            new bootstrap.Modal(document.getElementById('qrShowModal')).show();
+        } else {
+            // Nếu chưa có ảnh thì tạo lại
+            this.showQR(id, title);
+        }
+    },
+
     showQR(id, title) {
         document.getElementById('modal-qr-target').innerHTML = ""; 
         const fullUrl = `${window.location.origin}${window.location.pathname}?id=${id}`;
@@ -300,30 +344,42 @@ const app = {
 
         setTimeout(() => {
             new QRCode(document.getElementById('modal-qr-target'), {
-                text: fullUrl,
-                width: 250, // Tăng kích thước chút cho rõ
-                height: 250,
-                correctLevel: QRCode.CorrectLevel.H // BẮT BUỘC: Mức H
+                text: fullUrl, width: 250, height: 250, correctLevel: QRCode.CorrectLevel.H
             });
-            
-            // Vẽ chữ đè lên
-            setTimeout(() => {
-                this.addBranding('modal-qr-target');
-            }, 100);
+            setTimeout(() => { this.addBranding('modal-qr-target'); }, 100);
         }, 300);
     },
 
     downloadExistingQR() {
         const div = document.getElementById('modal-qr-target');
         const img = div.querySelector('img');
-        
+        const canvas = div.querySelector('canvas');
+        let imgURI = '';
+
         if (img && img.src) {
+             // Tải ảnh từ Drive thông qua Blob để tránh lỗi Cross-Origin
+             fetch(img.src)
+                .then(resp => resp.blob())
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = 'TheGioiQR.png';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                })
+                .catch(() => alert("Vui lòng nhấn giữ ảnh để lưu thủ công (Do chính sách bảo mật của trình duyệt)."));
+             return;
+        }
+        else if (canvas) imgURI = canvas.toDataURL("image/png");
+
+        if (imgURI) {
             const a = document.createElement('a');
             a.download = 'TheGioiQR.png';
-            a.href = img.src;
+            a.href = imgURI;
             a.click();
-        } else {
-            alert("Đang tạo ảnh, vui lòng thử lại...");
         }
     },
 
@@ -367,7 +423,6 @@ const app = {
     async loadInbox() {
         const container = document.getElementById('inbox-container');
         container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm"></div></div>';
-        
         try {
             const q = query(collection(db, "messages"), where("toUid", "==", currentUser.uid), orderBy("createdAt", "desc"));
             const snap = await getDocs(q);
@@ -414,7 +469,6 @@ const app = {
             document.getElementById('v-desc').innerText = d.desc || "";
             document.getElementById('v-owner').innerText = d.ownerName || "TheGioiQR User";
             document.getElementById('v-btn').href = d.link;
-
             const ownerSnap = await getDoc(doc(db, "users", d.createdBy));
             if (ownerSnap.exists() && ownerSnap.data().isVip) {
                 document.getElementById('banner-container').classList.add('hidden');
