@@ -85,7 +85,7 @@
         </div>
         
         <div class="p-2 text-center text-muted border-top bg-light" style="font-size: 0.65rem;">
-            Version 0.1 &copy; 2026 TheGioiQR
+            Version 0.2 &copy; 2026 TheGioiQR
         </div>
     </div>
 
@@ -122,26 +122,29 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h6 class="modal-title">Cập nhật thông tin</h6>
+                    <h6 class="modal-title fw-bold">Cập nhật thông tin</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="edit-id">
                     <div class="mb-3">
-                        <label class="form-label small text-muted">Tiêu đề</label>
+                        <label class="form-label small text-muted fw-bold">Tiêu đề</label>
                         <input type="text" id="edit-title" class="form-control">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small text-muted">Mô tả</label>
-                        <textarea id="edit-desc" class="form-control" rows="3"></textarea>
+                        <label class="form-label small text-muted fw-bold">Mô tả hiển thị</label>
+                        <textarea id="edit-desc" class="form-control" rows="4"></textarea>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small text-muted">Link đích</label>
-                        <input type="url" id="edit-link" class="form-control">
+                        <label class="form-label small text-muted fw-bold">Link đích (URL)</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-link"></i></span>
+                            <input type="url" id="edit-link" class="form-control">
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-primary w-100" onclick="app.saveEdit()">Lưu thay đổi</button>
+                    <button class="btn btn-primary w-100 rounded-pill" onclick="app.saveEdit()">Lưu thay đổi</button>
                 </div>
             </div>
         </div>
