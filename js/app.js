@@ -183,42 +183,152 @@ const app = {
         }
     },
 
+    // --- QUẢN LÝ DANH SÁCH (Cập nhật hiển thị và nút bấm) ---
     async loadListQR() {
         const container = document.getElementById('list-container');
-        container.innerHTML = '<div class="text-center"><div class="spinner-border spinner-border-sm"></div></div>';
+        // Hiển thị loading
+        container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm"></div></div>';
         
         const q = query(collection(db, "qr_codes"), where("createdBy", "==", currentUser.uid), orderBy("createdAt", "desc"));
         const snap = await getDocs(q);
         
         if (snap.empty) {
-            container.innerHTML = '<p class="text-center text-muted mt-3">Chưa có mã nào.</p>';
+            container.innerHTML = `
+                <div class="text-center text-muted mt-4">
+                    <i class="fas fa-box-open fa-3x mb-3 opacity-50"></i>
+                    <p>Bạn chưa tạo mã QR nào.</p>
+                </div>`;
             return;
         }
 
         container.innerHTML = "";
         snap.forEach(docSnap => {
             const d = docSnap.data();
-            const percent = Math.min((d.views / d.viewLimit) * 100, 100);
-            const badgeColor = percent >= 90 ? 'bg-danger' : 'bg-success';
+            // Tính phần trăm giới hạn view để hiện màu (Xanh/Vàng/Đỏ)
+            const percent = d.viewLimit > 0 ? (d.views / d.viewLimit) * 100 : 0;
+            let badgeClass = 'bg-success';
+            if (percent > 70) badgeClass = 'bg-warning text-dark';
+            if (percent >= 100) badgeClass = 'bg-danger';
             
+            // Xử lý mô tả: Nếu dài quá thì cắt bớt
+            let descDisplay = d.desc || "Chưa có mô tả";
+            if(descDisplay.length > 60) descDisplay = descDisplay.substring(0, 60) + "...";
+
             container.innerHTML += `
-                <div class="qr-list-item">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <strong class="text-truncate me-2">${d.title || 'Không tiêu đề'}</strong>
-                        <span class="badge ${badgeColor}">${d.views}/${d.viewLimit}</span>
+                <div class="qr-list-item position-relative">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <strong class="text-truncate me-2 text-primary" style="font-size: 1.1rem;">
+                            ${d.title || 'Không tiêu đề'}
+                        </strong>
+                        <span class="badge ${badgeClass} rounded-pill" style="font-size: 0.7rem;">
+                            <i class="fas fa-eye"></i> ${d.views}/${d.viewLimit}
+                        </span>
                     </div>
-                    <div class="small text-muted text-truncate mb-2">${d.link}</div>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-outline-primary flex-fill" onclick="window.open('?id=${docSnap.id}', '_blank')">Xem</button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="app.deleteQR('${docSnap.id}')"><i class="fas fa-trash"></i></button>
+                    
+                    <div class="text-muted small mb-3" style="line-height: 1.4;">
+                        ${descDisplay}
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 border-top pt-2">
+                        <button class="btn btn-sm btn-light text-secondary border" 
+                                onclick="window.open('?id=${docSnap.id}', '_blank')" 
+                                title="Xem trang đích">
+                            <i class="fas fa-eye"></i>
+                        </button>
+
+                        <button class="btn btn-sm btn-light text-primary border" 
+                                onclick="app.openEdit('${docSnap.id}')" 
+                                title="Sửa nội dung">
+                            <i class="fas fa-pen"></i>
+                        </button>
+
+                        <button class="btn btn-sm btn-light text-danger border" 
+                                onclick="app.deleteQR('${docSnap.id}')" 
+                                title="Xóa mã">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </div>
                 </div>
             `;
         });
     },
 
+    // --- CHỨC NĂNG SỬA & XÓA ---
+    
+    // 1. Mở Modal Sửa
+    async openEdit(id) {
+        document.getElementById('loading-overlay').classList.remove('hidden');
+        try {
+            const docRef = doc(db, "qr_codes", id);
+            const snap = await getDoc(docRef);
+            
+            if (snap.exists()) {
+                const data = snap.data();
+                // Điền dữ liệu vào Form
+                document.getElementById('edit-id').value = id;
+                document.getElementById('edit-title').value = data.title;
+                document.getElementById('edit-desc').value = data.desc;
+                document.getElementById('edit-link').value = data.link;
+                
+                // Mở Modal
+                const myModal = new bootstrap.Modal(document.getElementById('editModal'));
+                myModal.show();
+            } else {
+                alert("Mã này không còn tồn tại!");
+                this.loadListQR();
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Lỗi: " + e.message);
+        } finally {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+    },
+
+    // 2. Lưu Sửa
+    async saveEdit() {
+        const id = document.getElementById('edit-id').value;
+        const title = document.getElementById('edit-title').value;
+        const desc = document.getElementById('edit-desc').value;
+        const link = document.getElementById('edit-link').value;
+
+        if(!link) return alert("Link không được để trống!");
+
+        // Disable nút để tránh bấm nhiều lần
+        const btnSave = document.querySelector('#editModal .btn-primary');
+        const originalText = btnSave.innerText;
+        btnSave.innerText = "Đang lưu...";
+        btnSave.disabled = true;
+
+        try {
+            const docRef = doc(db, "qr_codes", id);
+            await updateDoc(docRef, {
+                title: title,
+                desc: desc,
+                link: link,
+                updatedAt: new Date().toISOString()
+            });
+            
+            alert("Cập nhật thành công!");
+            
+            // Đóng Modal và reload list
+            const modalEl = document.getElementById('editModal');
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            modalInstance.hide();
+            
+            this.loadListQR();
+
+        } catch (e) {
+            alert("Lỗi khi lưu: " + e.message);
+        } finally {
+            btnSave.innerText = originalText;
+            btnSave.disabled = false;
+        }
+    },
+
+    // 3. Xóa
     async deleteQR(id) {
-        if(confirm("Bạn có chắc muốn xóa mã này?")) {
+        if(confirm("Bạn có chắc muốn xóa mã này? Hành động không thể hoàn tác.")) {
             await deleteDoc(doc(db, "qr_codes", id));
             this.loadListQR();
         }
@@ -319,9 +429,7 @@ const app = {
     
     // Hàm gọi Login từ Sidebar
     showLogin() {
-        this.nav('create'); // Thực ra chỉ cần reload hoặc check auth
-        // Nhưng logic ở init() sẽ tự chuyển sang trang login nếu chưa đăng nhập
-        // Nên ở đây ta gọi logout để clear state hoặc đơn giản là reload
+        this.nav('create'); // Chuyển về tab mặc định, Auth Listener sẽ tự chuyển trang
         window.location.reload();
     }
 };
