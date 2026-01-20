@@ -3,8 +3,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, collection, query, where, getDocs, deleteDoc, orderBy, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// --- CẤU HÌNH ---
-const APP_VERSION = "0.4"; // Update Version
+// --- CẤU HÌNH VERSION ---
+const APP_VERSION = "0.5"; // Version Mới
 const appInstance = initializeApp(firebaseConfig);
 const auth = getAuth(appInstance);
 const db = getFirestore(appInstance);
@@ -15,9 +15,9 @@ let userData = null;
 let currentQrData = {}; 
 const root = document.getElementById('app-root'); 
 
+// --- HỆ THỐNG APP ---
 const app = {
     async init() {
-        // Cập nhật Version vào Footer
         const verEl = document.getElementById('app-version');
         if(verEl) verEl.innerText = APP_VERSION;
 
@@ -32,7 +32,6 @@ const app = {
                 if (user) {
                     currentUser = user;
                     await this.syncUser(user);
-                    // Mặc định tải dashboard
                     await this.loadPage('dashboard');
                     this.updateSidebar(true);
                     this.nav('create'); 
@@ -105,36 +104,29 @@ const app = {
         }
     },
 
-    // --- HỆ THỐNG ĐIỀU HƯỚNG THÔNG MINH (NAV) ---
+    // --- NAV ---
     async nav(tabId) {
-        // Đóng sidebar trước
         const sidebarEl = document.getElementById('sidebar');
         const sidebarInstance = bootstrap.Offcanvas.getInstance(sidebarEl);
         if (sidebarInstance) sidebarInstance.hide();
 
-        // Xử lý chuyển trang Hướng Dẫn (Dạng trang riêng)
         if (tabId === 'guide') {
             await this.loadPage('huongdan');
             return; 
         }
 
-        // Xử lý các tab thuộc Dashboard (Create, List, Inbox)
-        // 1. Kiểm tra xem đang ở Dashboard chưa, nếu chưa thì load lại Dashboard
         if (!document.getElementById('view-create')) {
             await this.loadPage('dashboard');
         }
 
-        // 2. Ẩn tất cả các tab
         ['view-create', 'view-list', 'view-inbox'].forEach(id => {
             const el = document.getElementById(id);
             if(el) el.classList.add('hidden');
         });
         
-        // 3. Hiện tab được chọn
         const target = document.getElementById('view-' + tabId);
         if(target) target.classList.remove('hidden');
 
-        // 4. Load dữ liệu
         if (tabId === 'list') this.loadListQR();
         if (tabId === 'inbox') this.loadInbox();
     },
@@ -267,10 +259,12 @@ const app = {
         const desc = document.getElementById('edit-desc').value;
         const link = document.getElementById('edit-link').value;
         if(!link) return alert("Link không được để trống!");
+
         const btnSave = document.querySelector('#editModal .btn-primary');
         const originalText = btnSave.innerText;
         btnSave.innerText = "Đang lưu...";
         btnSave.disabled = true;
+
         try {
             await updateDoc(doc(db, "qr_codes", id), { title, desc, link, updatedAt: new Date().toISOString() });
             bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
@@ -322,7 +316,9 @@ const app = {
                 document.getElementById('loading-overlay').classList.add('hidden');
                 return;
             }
+
             updateDoc(qrRef, { views: increment(1) });
+
             document.getElementById('v-title').innerText = d.title || "Tài liệu";
             document.getElementById('v-desc').innerText = d.desc || "";
             document.getElementById('v-owner').innerText = d.ownerName || "TheGioiQR User";
