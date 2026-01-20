@@ -1,21 +1,29 @@
-<div class="container py-3">
-    
     <div id="view-create">
         <h5 class="text-primary fw-bold mb-3"><i class="fas fa-magic me-2"></i>Tạo Mã QR Mới</h5>
         
         <div class="card border-0 shadow-sm p-3 mb-4">
             <div class="mb-3">
-                <input type="text" id="inp-title" class="form-control form-control-lg" placeholder="Tiêu đề tài liệu (VD: Bài giảng tuần 1)">
+                <label class="small fw-bold text-muted ms-1">Tiêu đề tài liệu</label>
+                <input type="text" id="inp-title" class="form-control form-control-lg" placeholder="VD: Tài liệu an toàn điện 2026">
             </div>
+
             <div class="mb-3">
-                <textarea id="inp-desc" class="form-control" rows="3" placeholder="Mô tả ngắn gọn / Ghi chú cho người xem..."></textarea>
-            </div>
-            <div class="mb-3">
+                <label class="small fw-bold text-muted ms-1">Đường dẫn tài liệu (Link)</label>
                 <div class="input-group">
-                    <span class="input-group-text"><i class="fas fa-link"></i></span>
-                    <input type="url" id="inp-link" class="form-control" placeholder="Dán link Drive/Youtube/Web tại đây...">
+                    <span class="input-group-text bg-white"><i class="fas fa-link text-primary"></i></span>
+                    <input type="url" id="inp-link" class="form-control" placeholder="Dán link Google Drive, Youtube, Dropbox, Website...">
+                </div>
+                <div class="form-text text-muted small mt-1">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Lưu ý: Nếu dùng Google Drive, hãy nhớ mở quyền <strong>"Bất kỳ ai có đường liên kết"</strong> trước khi dán vào đây.
                 </div>
             </div>
+
+            <div class="mb-3">
+                <label class="small fw-bold text-muted ms-1">Ghi chú / Mô tả</label>
+                <textarea id="inp-desc" class="form-control" rows="3" placeholder="Mô tả ngắn gọn nội dung..."></textarea>
+            </div>
+
             <button class="btn btn-primary w-100 rounded-pill py-3 fw-bold shadow-sm" onclick="app.createQR()">
                 <i class="fas fa-bolt me-1"></i> TẠO MÃ NGAY
             </button>
@@ -30,23 +38,3 @@
             </button>
         </div>
     </div>
-
-    <div id="view-list" class="hidden">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="text-primary fw-bold mb-0"><i class="fas fa-list me-2"></i>Danh sách</h5>
-            <div class="input-group" style="width: 200px;">
-                <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted small"></i></span>
-                <input type="text" id="search-qr" class="form-control border-start-0 ps-0" placeholder="Tìm tên..." onkeyup="app.filterList()">
-            </div>
-        </div>
-        
-        <div id="list-container">
-            </div>
-    </div>
-
-    <div id="view-inbox" class="hidden">
-        <h5 class="text-primary fw-bold mb-3"><i class="fas fa-envelope me-2"></i>Hộp thư hỗ trợ</h5>
-        <div id="inbox-container">
-            </div>
-    </div>
-</div>
