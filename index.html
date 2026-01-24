@@ -2,173 +2,275 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#ffffff">
-    <title>Thế giới QR</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TA QR Biz - Tạo Mã QR Động</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+        .auth-container { max-width: 400px; margin: 50px auto; }
+        .dashboard-container { max-width: 1200px; margin: 30px auto; display: none; padding: 0 15px; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .vip-badge { background-color: #FFD700; color: #333; padding: 5px 12px; border-radius: 20px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .qr-thumb { width: 60px; height: 60px; object-fit: contain; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; }
+        .quota-box { background: #e9ecef; padding: 12px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 15px; }
+        .quota-warning { color: #dc3545; font-weight: bold; }
+        .quota-active { color: #198754; font-weight: bold; }
+    </style>
 </head>
 <body>
 
-    <div id="loading-overlay">
-        <div class="spinner-border text-primary mb-2" role="status"></div>
-        <small class="text-muted fw-bold" style="letter-spacing: 1px;">THẾ GIỚI QR</small>
+<div id="redirect-screen" style="display:none; height:100vh; background:#fff; align-items:center; justify-content:center; flex-direction:column;">
+    <div class="spinner-border text-primary mb-3"></div>
+    <h4 class="text-secondary">Đang kết nối...</h4>
+</div>
+
+<div id="auth-screen" class="container auth-container">
+    <div class="text-center mb-4">
+        <h2 class="fw-bold text-primary"><i class="fa-solid fa-qrcode"></i> TA QR Biz</h2>
+        <p class="text-muted">Nền tảng quản lý QR Code</p>
     </div>
+    <div class="card p-4">
+        <form id="authForm">
+            <div class="mb-3"><label>Email</label><input type="email" class="form-control" id="email" required></div>
+            <div class="mb-3"><label>Mật khẩu</label><input type="password" class="form-control" id="password" required></div>
+            <div class="d-grid"><button type="submit" class="btn btn-primary btn-lg">Bắt đầu ngay</button></div>
+        </form>
+    </div>
+</div>
 
-    <header class="app-header">
-        <button class="btn border-0 text-secondary" data-bs-toggle="offcanvas" data-bs-target="#sidebar">
-            <i class="fas fa-bars fa-lg"></i>
-        </button>
-        <div class="header-title">Thế giới QR</div>
-        <a href="index.html" class="btn border-0 text-secondary">
-            <i class="fas fa-home fa-lg"></i>
-        </a>
-    </header>
-
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebar" style="width: 280px;">
-        <div class="offcanvas-header bg-light border-bottom">
-            <h5 class="offcanvas-title text-primary fw-bold">Menu</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
-        </div>
-        <div class="offcanvas-body p-0">
-            
-            <div id="menu-user" class="hidden">
-                <div class="p-3 bg-light bg-opacity-50 border-bottom mb-2">
-                    <div class="d-flex align-items-center">
-                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width:45px; height:45px; font-weight:bold;">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div style="overflow: hidden;">
-                            <div class="fw-bold text-truncate text-dark" id="u-name">User</div>
-                            <small class="text-muted" style="font-size: 0.8rem;">Quota: <span id="u-quota" class="badge bg-primary rounded-pill">0/5</span></small>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="list-group list-group-flush">
-                    <a href="#" class="list-group-item list-group-item-action py-3 border-0" onclick="app.nav('create'); return false;">
-                        <i class="fas fa-plus-circle text-primary me-3"></i> Tạo mã mới
-                    </a>
-                    
-                    <a href="#" class="list-group-item list-group-item-action py-3 border-0" onclick="app.nav('list'); return false;">
-                        <i class="fas fa-list text-primary me-3"></i> Quản lý mã
-                    </a>
-                    
-                    <a href="#" class="list-group-item list-group-item-action py-3 border-0 d-flex justify-content-between align-items-center" onclick="app.nav('inbox'); return false;">
-                        <span><i class="fas fa-envelope text-primary me-3"></i> Hộp thư</span>
-                        <span id="msg-badge" class="badge bg-danger rounded-pill hidden">0</span>
-                    </a>
-
-                    <a href="#" class="list-group-item list-group-item-action py-3 border-0" onclick="app.nav('guide'); return false;">
-                        <i class="fas fa-book-reader text-primary me-3"></i> Hướng dẫn
-                    </a>
-                    
-                    <div class="border-top my-2"></div>
-                    
-                    <a href="#" class="list-group-item list-group-item-action py-3 border-0 text-danger fw-bold" onclick="app.logout(); return false;">
-                        <i class="fas fa-sign-out-alt me-3"></i> Đăng xuất
-                    </a>
-                </div>
+<div id="dashboard-screen" class="dashboard-container">
+    <div class="card bg-white p-3 mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <h5 class="mb-1" id="welcomeMsg">Xin chào</h5>
+                <div id="planInfo" class="small">Checking...</div>
             </div>
-
-            <div id="menu-guest" class="p-4 text-center">
-                <div class="mb-4 text-primary opacity-50">
-                    <i class="fas fa-shield-alt fa-4x"></i>
-                </div>
-                <h6 class="fw-bold text-dark">Xin chào!</h6>
-                <p class="small text-muted mb-4">Vui lòng đăng nhập để quản lý mã QR.</p>
-                <button class="btn btn-primary w-100 rounded-pill shadow-sm fw-bold" onclick="app.showLogin()">
-                    Đăng nhập / Đăng ký
+            <div class="text-end mt-2 mt-md-0">
+                <button class="btn btn-outline-warning text-dark fw-bold btn-sm shadow-sm" onclick="openPaymentModal()">
+                    <i class="fa-solid fa-crown text-warning"></i> Nâng VIP
                 </button>
+                <button class="btn btn-light btn-sm ms-2 border" onclick="logout()">Thoát</button>
             </div>
         </div>
     </div>
 
-    <main id="app-root" class="container-fluid p-0"></main>
-
-    <footer class="app-footer flex-row gap-2">
-        <span class="fw-bold text-dark">© 2026 Thế giới QR</span>
-        <span class="text-muted">|</span>
-        <span class="text-muted" style="font-size: 0.7rem;">v<span id="app-version">...</span></span>
-    </footer>
-
-    <div class="modal fade" id="contactModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header border-0 pb-0">
-                    <h6 class="modal-title fw-bold text-primary"><i class="fas fa-comment-alt me-2"></i>Nhắn tin cho tác giả</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <input type="text" id="msg-sender" class="form-control" placeholder="Tên của bạn">
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white fw-bold">Tạo Mã Mới</div>
+                <div class="card-body">
+                    <div class="quota-box">
+                        <div class="d-flex justify-content-between">
+                            <span>Kho lưu trữ:</span><span id="storageQuota">...</span>
+                        </div>
+                        <div class="d-flex justify-content-between mt-1">
+                            <span>Lượt tạo hôm nay:</span><span id="dailyQuota">...</span>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <textarea id="msg-content" class="form-control" rows="4" placeholder="Nhập câu hỏi hoặc nội dung cần hỗ trợ..."></textarea>
-                    </div>
+
+                    <form id="createQrForm">
+                        <div class="mb-3"><label>Tên gợi nhớ</label><input type="text" class="form-control" id="qrName" placeholder="VD: Wifi Tầng 1" required></div>
+                        <div class="mb-3"><label>Link đích</label><input type="url" class="form-control" id="qrDest" placeholder="https://..." required></div>
+                        <button type="submit" class="btn btn-primary w-100" id="btnCreate">Tạo QR Ngay</button>
+                    </form>
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button class="btn btn-primary w-100 rounded-pill fw-bold" onclick="app.sendMsg()">Gửi tin nhắn</button>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-header bg-white fw-bold border-bottom">Danh sách QR của bạn</div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light"><tr><th>QR</th><th>Thông tin</th><th class="text-center">Quét</th><th></th></tr></thead>
+                            <tbody id="qrTableBody"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <div class="modal fade" id="editModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header border-0">
-                    <h6 class="modal-title fw-bold">Sửa mã QR</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" id="edit-id">
-                    <div class="mb-3">
-                        <label class="small fw-bold text-muted">Tiêu đề</label>
-                        <input type="text" id="edit-title" class="form-control">
-                    </div>
-                    <div class="mb-3">
-                        <label class="small fw-bold text-muted">Mô tả</label>
-                        <textarea id="edit-desc" class="form-control" rows="3"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label class="small fw-bold text-muted">Link đích</label>
-                        <input type="url" id="edit-link" class="form-control">
-                    </div>
-                </div>
-                <div class="modal-footer border-0">
-                    <button class="btn btn-primary w-100 rounded-pill" onclick="app.saveEdit()">Lưu thay đổi</button>
-                </div>
-            </div>
-        </div>
-    </div>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy, serverTimestamp, updateDoc, increment, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    <div class="modal fade" id="qrShowModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header border-0">
-                    <h6 class="modal-title fw-bold">Mã QR của bạn</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body text-center bg-light">
-                    <div id="modal-qr-target" class="bg-white p-3 rounded shadow-sm d-inline-block mx-auto"></div>
-                    <div class="mt-3 small text-secondary fw-bold" id="modal-qr-title"></div>
-                </div>
-                <div class="modal-footer border-0">
-                    <button class="btn btn-dark w-100 rounded-pill fw-bold" onclick="app.downloadExistingQR()">
-                        <i class="fas fa-download me-2"></i> Tải ảnh về máy
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+    // --- CẤU HÌNH FIREBASE (Dán config của bạn vào đây) ---
+    const firebaseConfig = { apiKey: "AIzaSyCzWjfcD5Dgq7V-i2izb9tKLR6QM6qWPQo", authDomain: "tavietnam-78ae8.firebaseapp.com", projectId: "tavietnam-78ae8", storageBucket: "tavietnam-78ae8.firebasestorage.app", messagingSenderId: "670121705534", appId: "1:670121705534:web:1027ad98550573ad37116f" };
+    
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script type="module" src="js/app.js"></script>
+    // --- CẤU HÌNH THANH TOÁN ---
+    const BANK_BIN = "970422"; // Mã ngân hàng (MB)
+    const BANK_ACC = "0987654321"; // STK của bạn
+
+    const LIMITS = { STORAGE: 3, DAILY: 3 };
+    let currentUser, userProfile, myStorageCount = 0, myDailyUsage = 0;
+
+    // 1. LOGIC QUÉT QR (REDIRECT)
+    const scanId = new URLSearchParams(window.location.search).get('id');
+    if (scanId) {
+        document.getElementById('auth-screen').remove();
+        document.getElementById('dashboard-screen').remove();
+        document.getElementById('redirect-screen').style.display = 'flex';
+        
+        (async () => {
+            try {
+                const q = query(collection(db, "qr_codes_v2"), where("shortId", "==", scanId));
+                const snap = await getDocs(q);
+                if (!snap.empty) {
+                    const d = snap.docs[0];
+                    updateDoc(d.ref, { views: increment(1) }); // Tăng view
+                    window.location.href = d.data().destination; // Chuyển hướng
+                } else {
+                    alert("Mã QR không tồn tại!");
+                }
+            } catch (e) { console.error(e); }
+        })();
+    } else {
+        // 2. LOGIC DASHBOARD USER
+        onAuthStateChanged(auth, async (u) => {
+            if (u) {
+                currentUser = u;
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('dashboard-screen').style.display = 'block';
+                await loadData();
+            } else {
+                document.getElementById('auth-screen').style.display = 'block';
+                document.getElementById('dashboard-screen').style.display = 'none';
+            }
+        });
+
+        // Load Dữ liệu
+        async function loadData() {
+            await loadUserProfile();
+            await loadMyQRs();
+            updateUI();
+        }
+
+        async function loadUserProfile() {
+            const ref = doc(db, "users", currentUser.uid);
+            const snap = await getDoc(ref);
+            const todayStr = new Date().toISOString().split('T')[0];
+            
+            if (snap.exists()) {
+                userProfile = snap.data();
+                if (userProfile.lastActionDate !== todayStr) {
+                    await updateDoc(ref, { dailyCount: 0, lastActionDate: todayStr });
+                    myDailyUsage = 0;
+                } else {
+                    myDailyUsage = userProfile.dailyCount || 0;
+                }
+            } else {
+                userProfile = { isPremium: false, dailyCount: 0, lastActionDate: todayStr, email: currentUser.email };
+                await setDoc(ref, userProfile);
+                myDailyUsage = 0;
+            }
+        }
+
+        async function loadMyQRs() {
+            const q = query(collection(db, "qr_codes_v2"), where("uid", "==", currentUser.uid), orderBy("createdAt", "desc"));
+            const snap = await getDocs(q);
+            myStorageCount = snap.size;
+            
+            const tbody = document.getElementById('qrTableBody');
+            tbody.innerHTML = '';
+            snap.forEach(d => {
+                const data = d.data();
+                tbody.innerHTML += `
+                    <tr>
+                        <td><img src="${data.imageUrl}" class="qr-thumb" onclick="viewQR('${data.imageUrl}')"></td>
+                        <td><strong>${data.name}</strong><br><a href="${data.destination}" target="_blank" class="text-muted small text-decoration-none">${data.destination.substring(0,20)}...</a></td>
+                        <td class="text-center fw-bold">${data.views||0}</td>
+                        <td class="text-end"><button class="btn btn-sm btn-outline-danger" onclick="delQr('${d.id}')"><i class="fa-solid fa-trash"></i></button></td>
+                    </tr>`;
+            });
+        }
+
+        function updateUI() {
+            document.getElementById('welcomeMsg').innerText = `Xin chào, ${currentUser.email.split('@')[0]}`;
+            const planInfo = document.getElementById('planInfo');
+            const btn = document.getElementById('btnCreate');
+            const stEl = document.getElementById('storageQuota');
+            const daEl = document.getElementById('dailyQuota');
+            
+            let isVip = false;
+            if(userProfile.isPremium && userProfile.expiryDate && userProfile.expiryDate.toDate() > new Date()) isVip = true;
+
+            if(isVip) {
+                const days = Math.ceil((userProfile.expiryDate.toDate() - new Date())/(86400000));
+                planInfo.innerHTML = `<span class="vip-badge"><i class="fa-solid fa-crown"></i> VIP (Còn ${days} ngày)</span>`;
+                stEl.innerText = "Không giới hạn"; daEl.innerText = "Không giới hạn";
+                btn.disabled = false;
+            } else {
+                planInfo.innerHTML = `<span class="badge bg-secondary">Tài khoản Free</span>`;
+                stEl.innerHTML = `<span class="${myStorageCount >= LIMITS.STORAGE ? 'quota-warning':'quota-active'}">${myStorageCount}/${LIMITS.STORAGE}</span>`;
+                daEl.innerHTML = `<span class="${myDailyUsage >= LIMITS.DAILY ? 'quota-warning':'quota-active'}">${myDailyUsage}/${LIMITS.DAILY}</span>`;
+                
+                if(myStorageCount >= LIMITS.STORAGE || myDailyUsage >= LIMITS.DAILY) {
+                    btn.disabled = true; btn.innerText = "Đạt giới hạn";
+                } else {
+                    btn.disabled = false; btn.innerText = "Tạo QR Ngay";
+                }
+            }
+        }
+
+        // Tạo QR
+        document.getElementById('createQrForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btnCreate'); btn.disabled = true;
+            try {
+                const name = document.getElementById('qrName').value;
+                const dest = document.getElementById('qrDest').value;
+                const shortId = Math.random().toString(36).substring(2, 8);
+                const link = `${window.location.href.split('?')[0]}?id=${shortId}`; // Link trỏ về chính file này
+                const qr = new QRious({ value: link, size: 250 });
+                
+                await addDoc(collection(db, "qr_codes_v2"), {
+                    uid: currentUser.uid, shortId, name, destination: dest,
+                    imageUrl: qr.toDataURL(), views: 0, createdAt: serverTimestamp()
+                });
+
+                if(!userProfile.isPremium) {
+                    await updateDoc(doc(db,"users",currentUser.uid), { dailyCount: increment(1), lastActionDate: new Date().toISOString().split('T')[0] });
+                }
+                
+                document.getElementById('createQrForm').reset();
+                Swal.fire('Thành công','','success');
+                await loadData();
+            } catch (err) { Swal.fire('Lỗi', err.message, 'error'); btn.disabled = false; }
+        });
+
+        // Các hàm phụ trợ
+        window.openPaymentModal = () => {
+            const content = `TAQR ${currentUser.uid}`;
+            const url = `https://img.vietqr.io/image/${BANK_BIN}-${BANK_ACC}-compact.png?amount=50000&addInfo=${encodeURIComponent(content)}`;
+            Swal.fire({
+                title: 'Nâng cấp VIP',
+                html: `<img src="${url}" style="width:200px;border:1px solid #ddd;border-radius:8px"><div class="mt-2 small text-start alert alert-info">ND chuyển khoản: <b class="text-danger">${content}</b></div>`,
+                confirmButtonText: 'Đã chuyển'
+            });
+        };
+        
+        window.viewQR = (url) => Swal.fire({ imageUrl: url, showConfirmButton: false, showCloseButton: true });
+        window.delQr = async (id) => { if(confirm("Xóa mã này?")) { await deleteDoc(doc(db,"qr_codes_v2",id)); await loadData(); } };
+        window.logout = () => signOut(auth);
+        
+        document.getElementById('authForm').addEventListener('submit', async(e)=>{
+            e.preventDefault();
+            const em=document.getElementById('email').value, pw=document.getElementById('password').value;
+            try{await signInWithEmailAndPassword(auth,em,pw)}catch{try{await createUserWithEmailAndPassword(auth,em,pw)}catch(er){alert(er.message)}}
+        });
+    }
+</script>
 </body>
 </html>
