@@ -3,42 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TA QR Biz - Tạo Mã QR Động</title>
+    <title>TA QR Biz - Google Login</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     
     <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
-        .auth-container { max-width: 400px; margin: 50px auto; }
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+        .auth-container { max-width: 400px; margin: 80px auto; text-align: center; }
         .dashboard-container { max-width: 1200px; margin: 30px auto; display: none; padding: 0 15px; }
         .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .vip-badge { background-color: #FFD700; color: #333; padding: 5px 12px; border-radius: 20px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .qr-thumb { width: 60px; height: 60px; object-fit: contain; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; }
+        .google-btn { background: white; color: #333; border: 1px solid #ddd; padding: 12px; border-radius: 50px; width: 100%; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .google-btn:hover { background: #f8f9fa; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.15); }
+        .vip-badge { background-color: #FFD700; color: #333; padding: 5px 12px; border-radius: 20px; font-weight: bold; }
+        .qr-thumb { width: 60px; height: 60px; object-fit: contain; border: 1px solid #ddd; border-radius: 4px; }
         .quota-box { background: #e9ecef; padding: 12px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 15px; }
         .quota-warning { color: #dc3545; font-weight: bold; }
-        .quota-active { color: #198754; font-weight: bold; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
 <div id="redirect-screen" style="display:none; height:100vh; background:#fff; align-items:center; justify-content:center; flex-direction:column;">
     <div class="spinner-border text-primary mb-3"></div>
-    <h4 class="text-secondary">Đang kết nối...</h4>
+    <h4>Đang kết nối...</h4>
 </div>
 
 <div id="auth-screen" class="container auth-container">
-    <div class="text-center mb-4">
-        <h2 class="fw-bold text-primary"><i class="fa-solid fa-qrcode"></i> TA QR Biz</h2>
-        <p class="text-muted">Nền tảng quản lý QR Code</p>
-    </div>
-    <div class="card p-4">
-        <form id="authForm">
-            <div class="mb-3"><label>Email</label><input type="email" class="form-control" id="email" required></div>
-            <div class="mb-3"><label>Mật khẩu</label><input type="password" class="form-control" id="password" required></div>
-            <div class="d-grid"><button type="submit" class="btn btn-primary btn-lg">Bắt đầu ngay</button></div>
-        </form>
+    <div class="card p-5">
+        <h2 class="fw-bold text-primary mb-3"><i class="fa-solid fa-qrcode"></i> TA QR Biz</h2>
+        <p class="text-muted mb-4">Nền tảng quản lý mã QR chuyên nghiệp</p>
+        
+        <button onclick="loginGoogle()" class="google-btn">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="24">
+            Tiếp tục với Google
+        </button>
+        <p class="text-muted mt-3 small">Không cần nhớ mật khẩu. Nhanh chóng & Bảo mật.</p>
     </div>
 </div>
 
@@ -49,10 +50,8 @@
                 <h5 class="mb-1" id="welcomeMsg">Xin chào</h5>
                 <div id="planInfo" class="small">Checking...</div>
             </div>
-            <div class="text-end mt-2 mt-md-0">
-                <button class="btn btn-outline-warning text-dark fw-bold btn-sm shadow-sm" onclick="openPaymentModal()">
-                    <i class="fa-solid fa-crown text-warning"></i> Nâng VIP
-                </button>
+            <div class="text-end">
+                <button class="btn btn-outline-warning text-dark fw-bold btn-sm" onclick="openPaymentModal()"><i class="fa-solid fa-crown text-warning"></i> Nâng VIP</button>
                 <button class="btn btn-light btn-sm ms-2 border" onclick="logout()">Thoát</button>
             </div>
         </div>
@@ -64,30 +63,24 @@
                 <div class="card-header bg-primary text-white fw-bold">Tạo Mã Mới</div>
                 <div class="card-body">
                     <div class="quota-box">
-                        <div class="d-flex justify-content-between">
-                            <span>Kho lưu trữ:</span><span id="storageQuota">...</span>
-                        </div>
-                        <div class="d-flex justify-content-between mt-1">
-                            <span>Lượt tạo hôm nay:</span><span id="dailyQuota">...</span>
-                        </div>
+                        <div class="d-flex justify-content-between"><span>Kho lưu trữ:</span><span id="storageQuota">...</span></div>
+                        <div class="d-flex justify-content-between mt-1"><span>Lượt tạo hôm nay:</span><span id="dailyQuota">...</span></div>
                     </div>
-
                     <form id="createQrForm">
-                        <div class="mb-3"><label>Tên gợi nhớ</label><input type="text" class="form-control" id="qrName" placeholder="VD: Wifi Tầng 1" required></div>
+                        <div class="mb-3"><label>Tên gợi nhớ</label><input type="text" class="form-control" id="qrName" required></div>
                         <div class="mb-3"><label>Link đích</label><input type="url" class="form-control" id="qrDest" placeholder="https://..." required></div>
                         <button type="submit" class="btn btn-primary w-100" id="btnCreate">Tạo QR Ngay</button>
                     </form>
                 </div>
             </div>
         </div>
-
         <div class="col-lg-8">
             <div class="card h-100">
-                <div class="card-header bg-white fw-bold border-bottom">Danh sách QR của bạn</div>
+                <div class="card-header bg-white fw-bold border-bottom">Danh sách QR</div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light"><tr><th>QR</th><th>Thông tin</th><th class="text-center">Quét</th><th></th></tr></thead>
+                            <thead class="table-light"><tr><th>QR</th><th>Thông tin</th><th class="text-center">View</th><th></th></tr></thead>
                             <tbody id="qrTableBody"></tbody>
                         </table>
                     </div>
@@ -100,44 +93,55 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy, serverTimestamp, updateDoc, increment, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    // --- CẤU HÌNH FIREBASE (Dán config của bạn vào đây) ---
+    // --- CẤU HÌNH ---
     const firebaseConfig = { apiKey: "AIzaSyCzWjfcD5Dgq7V-i2izb9tKLR6QM6qWPQo", authDomain: "tavietnam-78ae8.firebaseapp.com", projectId: "tavietnam-78ae8", storageBucket: "tavietnam-78ae8.firebasestorage.app", messagingSenderId: "670121705534", appId: "1:670121705534:web:1027ad98550573ad37116f" };
-    
+    const BANK_BIN = "970422"; const BANK_ACC = "0987654321";
+
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
-
-    // --- CẤU HÌNH THANH TOÁN ---
-    const BANK_BIN = "970422"; // Mã ngân hàng (MB)
-    const BANK_ACC = "0987654321"; // STK của bạn
+    const provider = new GoogleAuthProvider();
 
     const LIMITS = { STORAGE: 3, DAILY: 3 };
     let currentUser, userProfile, myStorageCount = 0, myDailyUsage = 0;
 
-    // 1. LOGIC QUÉT QR (REDIRECT)
+    // --- LOGIC AUTH GOOGLE ---
+    window.loginGoogle = async () => {
+        try {
+            const result = await signInWithPopup(auth, provider);
+            // Sau khi login, check xem có doc chưa, chưa thì tạo
+            const userRef = doc(db, "users", result.user.uid);
+            const snap = await getDoc(userRef);
+            if (!snap.exists()) {
+                await setDoc(userRef, {
+                    email: result.user.email,
+                    isPremium: false,
+                    dailyCount: 0,
+                    lastActionDate: new Date().toISOString().split('T')[0],
+                    createdAt: serverTimestamp()
+                });
+            }
+        } catch (error) {
+            Swal.fire('Lỗi', error.message, 'error');
+        }
+    };
+
+    // --- LOGIC CHUNG (Giống Ver 3.0 nhưng bỏ phần Auth Form) ---
     const scanId = new URLSearchParams(window.location.search).get('id');
     if (scanId) {
-        document.getElementById('auth-screen').remove();
-        document.getElementById('dashboard-screen').remove();
+        document.getElementById('auth-screen').remove(); document.getElementById('dashboard-screen').remove();
         document.getElementById('redirect-screen').style.display = 'flex';
-        
         (async () => {
-            try {
-                const q = query(collection(db, "qr_codes_v2"), where("shortId", "==", scanId));
-                const snap = await getDocs(q);
-                if (!snap.empty) {
-                    const d = snap.docs[0];
-                    updateDoc(d.ref, { views: increment(1) }); // Tăng view
-                    window.location.href = d.data().destination; // Chuyển hướng
-                } else {
-                    alert("Mã QR không tồn tại!");
-                }
-            } catch (e) { console.error(e); }
+            const q = query(collection(db, "qr_codes_v2"), where("shortId", "==", scanId));
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+                updateDoc(snap.docs[0].ref, { views: increment(1) });
+                window.location.href = snap.docs[0].data().destination;
+            } else { alert("Mã QR không tồn tại!"); }
         })();
     } else {
-        // 2. LOGIC DASHBOARD USER
         onAuthStateChanged(auth, async (u) => {
             if (u) {
                 currentUser = u;
@@ -150,126 +154,65 @@
             }
         });
 
-        // Load Dữ liệu
-        async function loadData() {
-            await loadUserProfile();
-            await loadMyQRs();
-            updateUI();
-        }
-
+        async function loadData() { await loadUserProfile(); await loadMyQRs(); updateUI(); }
         async function loadUserProfile() {
-            const ref = doc(db, "users", currentUser.uid);
-            const snap = await getDoc(ref);
-            const todayStr = new Date().toISOString().split('T')[0];
-            
+            const ref = doc(db, "users", currentUser.uid); const snap = await getDoc(ref);
+            const today = new Date().toISOString().split('T')[0];
             if (snap.exists()) {
                 userProfile = snap.data();
-                if (userProfile.lastActionDate !== todayStr) {
-                    await updateDoc(ref, { dailyCount: 0, lastActionDate: todayStr });
-                    myDailyUsage = 0;
-                } else {
-                    myDailyUsage = userProfile.dailyCount || 0;
-                }
+                if (userProfile.lastActionDate !== today) { await updateDoc(ref, { dailyCount: 0, lastActionDate: today }); myDailyUsage = 0; }
+                else { myDailyUsage = userProfile.dailyCount || 0; }
             } else {
-                userProfile = { isPremium: false, dailyCount: 0, lastActionDate: todayStr, email: currentUser.email };
-                await setDoc(ref, userProfile);
-                myDailyUsage = 0;
+                 userProfile = { isPremium: false, dailyCount: 0, lastActionDate: today, email: currentUser.email };
+                 await setDoc(ref, userProfile);
             }
         }
-
         async function loadMyQRs() {
             const q = query(collection(db, "qr_codes_v2"), where("uid", "==", currentUser.uid), orderBy("createdAt", "desc"));
-            const snap = await getDocs(q);
-            myStorageCount = snap.size;
-            
-            const tbody = document.getElementById('qrTableBody');
-            tbody.innerHTML = '';
+            const snap = await getDocs(q); myStorageCount = snap.size;
+            const tbody = document.getElementById('qrTableBody'); tbody.innerHTML = '';
             snap.forEach(d => {
                 const data = d.data();
-                tbody.innerHTML += `
-                    <tr>
-                        <td><img src="${data.imageUrl}" class="qr-thumb" onclick="viewQR('${data.imageUrl}')"></td>
-                        <td><strong>${data.name}</strong><br><a href="${data.destination}" target="_blank" class="text-muted small text-decoration-none">${data.destination.substring(0,20)}...</a></td>
-                        <td class="text-center fw-bold">${data.views||0}</td>
-                        <td class="text-end"><button class="btn btn-sm btn-outline-danger" onclick="delQr('${d.id}')"><i class="fa-solid fa-trash"></i></button></td>
-                    </tr>`;
+                tbody.innerHTML += `<tr><td><img src="${data.imageUrl}" class="qr-thumb" onclick="viewQR('${data.imageUrl}')"></td><td><strong>${data.name}</strong><br><a href="${data.destination}" target="_blank" class="text-muted small text-decoration-none">${data.destination.substring(0,20)}...</a></td><td class="text-center fw-bold">${data.views||0}</td><td class="text-end"><button class="btn btn-sm btn-outline-danger" onclick="delQr('${d.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             });
         }
-
         function updateUI() {
-            document.getElementById('welcomeMsg').innerText = `Xin chào, ${currentUser.email.split('@')[0]}`;
-            const planInfo = document.getElementById('planInfo');
-            const btn = document.getElementById('btnCreate');
-            const stEl = document.getElementById('storageQuota');
-            const daEl = document.getElementById('dailyQuota');
-            
-            let isVip = false;
-            if(userProfile.isPremium && userProfile.expiryDate && userProfile.expiryDate.toDate() > new Date()) isVip = true;
-
+            document.getElementById('welcomeMsg').innerText = `Xin chào, ${currentUser.displayName || currentUser.email}`;
+            const planInfo = document.getElementById('planInfo'); const btn = document.getElementById('btnCreate');
+            const stEl = document.getElementById('storageQuota'); const daEl = document.getElementById('dailyQuota');
+            let isVip = userProfile.isPremium && userProfile.expiryDate && userProfile.expiryDate.toDate() > new Date();
             if(isVip) {
-                const days = Math.ceil((userProfile.expiryDate.toDate() - new Date())/(86400000));
-                planInfo.innerHTML = `<span class="vip-badge"><i class="fa-solid fa-crown"></i> VIP (Còn ${days} ngày)</span>`;
-                stEl.innerText = "Không giới hạn"; daEl.innerText = "Không giới hạn";
-                btn.disabled = false;
+                const days = Math.ceil((userProfile.expiryDate.toDate() - new Date())/86400000);
+                planInfo.innerHTML = `<span class="vip-badge"><i class="fa-solid fa-crown"></i> VIP (${days} ngày)</span>`;
+                stEl.innerText = "∞"; daEl.innerText = "∞"; btn.disabled = false;
             } else {
-                planInfo.innerHTML = `<span class="badge bg-secondary">Tài khoản Free</span>`;
-                stEl.innerHTML = `<span class="${myStorageCount >= LIMITS.STORAGE ? 'quota-warning':'quota-active'}">${myStorageCount}/${LIMITS.STORAGE}</span>`;
-                daEl.innerHTML = `<span class="${myDailyUsage >= LIMITS.DAILY ? 'quota-warning':'quota-active'}">${myDailyUsage}/${LIMITS.DAILY}</span>`;
-                
-                if(myStorageCount >= LIMITS.STORAGE || myDailyUsage >= LIMITS.DAILY) {
-                    btn.disabled = true; btn.innerText = "Đạt giới hạn";
-                } else {
-                    btn.disabled = false; btn.innerText = "Tạo QR Ngay";
-                }
+                planInfo.innerHTML = `<span class="badge bg-secondary">Free Plan</span>`;
+                stEl.innerHTML = `<span class="${myStorageCount>=LIMITS.STORAGE?'quota-warning':'quota-active'}">${myStorageCount}/${LIMITS.STORAGE}</span>`;
+                daEl.innerHTML = `<span class="${myDailyUsage>=LIMITS.DAILY?'quota-warning':'quota-active'}">${myDailyUsage}/${LIMITS.DAILY}</span>`;
+                btn.disabled = (myStorageCount >= LIMITS.STORAGE || myDailyUsage >= LIMITS.DAILY);
+                if(btn.disabled) btn.innerText = "Đạt giới hạn"; else btn.innerText = "Tạo QR Ngay";
             }
         }
-
-        // Tạo QR
         document.getElementById('createQrForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('btnCreate'); btn.disabled = true;
+            e.preventDefault(); const btn = document.getElementById('btnCreate'); btn.disabled = true;
             try {
-                const name = document.getElementById('qrName').value;
-                const dest = document.getElementById('qrDest').value;
+                const name = document.getElementById('qrName').value; const dest = document.getElementById('qrDest').value;
                 const shortId = Math.random().toString(36).substring(2, 8);
-                const link = `${window.location.href.split('?')[0]}?id=${shortId}`; // Link trỏ về chính file này
+                const link = `${window.location.href.split('?')[0]}?id=${shortId}`;
                 const qr = new QRious({ value: link, size: 250 });
-                
-                await addDoc(collection(db, "qr_codes_v2"), {
-                    uid: currentUser.uid, shortId, name, destination: dest,
-                    imageUrl: qr.toDataURL(), views: 0, createdAt: serverTimestamp()
-                });
-
-                if(!userProfile.isPremium) {
-                    await updateDoc(doc(db,"users",currentUser.uid), { dailyCount: increment(1), lastActionDate: new Date().toISOString().split('T')[0] });
-                }
-                
-                document.getElementById('createQrForm').reset();
-                Swal.fire('Thành công','','success');
-                await loadData();
+                await addDoc(collection(db, "qr_codes_v2"), { uid: currentUser.uid, shortId, name, destination: dest, imageUrl: qr.toDataURL(), views: 0, createdAt: serverTimestamp() });
+                if(!userProfile.isPremium) await updateDoc(doc(db,"users",currentUser.uid), { dailyCount: increment(1), lastActionDate: new Date().toISOString().split('T')[0] });
+                document.getElementById('createQrForm').reset(); Swal.fire('Thành công','','success'); await loadData();
             } catch (err) { Swal.fire('Lỗi', err.message, 'error'); btn.disabled = false; }
         });
-
-        // Các hàm phụ trợ
         window.openPaymentModal = () => {
             const content = `TAQR ${currentUser.uid}`;
             const url = `https://img.vietqr.io/image/${BANK_BIN}-${BANK_ACC}-compact.png?amount=50000&addInfo=${encodeURIComponent(content)}`;
-            Swal.fire({
-                title: 'Nâng cấp VIP',
-                html: `<img src="${url}" style="width:200px;border:1px solid #ddd;border-radius:8px"><div class="mt-2 small text-start alert alert-info">ND chuyển khoản: <b class="text-danger">${content}</b></div>`,
-                confirmButtonText: 'Đã chuyển'
-            });
+            Swal.fire({ title: 'Nâng cấp VIP', html: `<img src="${url}" style="width:200px;border-radius:8px"><div class="mt-2 alert alert-info">ND: <b class="text-danger">${content}</b></div>`, confirmButtonText: 'Đã chuyển' });
         };
-        
         window.viewQR = (url) => Swal.fire({ imageUrl: url, showConfirmButton: false, showCloseButton: true });
-        window.delQr = async (id) => { if(confirm("Xóa mã này?")) { await deleteDoc(doc(db,"qr_codes_v2",id)); await loadData(); } };
+        window.delQr = async (id) => { if(confirm("Xóa?")) { await deleteDoc(doc(db,"qr_codes_v2",id)); await loadData(); } };
         window.logout = () => signOut(auth);
-        
-        document.getElementById('authForm').addEventListener('submit', async(e)=>{
-            e.preventDefault();
-            const em=document.getElementById('email').value, pw=document.getElementById('password').value;
-            try{await signInWithEmailAndPassword(auth,em,pw)}catch{try{await createUserWithEmailAndPassword(auth,em,pw)}catch(er){alert(er.message)}}
-        });
     }
 </script>
 </body>
