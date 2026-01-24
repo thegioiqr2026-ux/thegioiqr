@@ -2,47 +2,103 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Login - Thế Giới QR</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Thế Giới QR</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <style>
-        body { background-color: #2c3e50; font-family: 'Segoe UI', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-        .admin-card { width: 100%; max-width: 500px; background: white; padding: 40px; border-radius: 15px; text-align: center; }
+        body {
+            background-color: #2c3e50; /* Màu nền tối chuyên nghiệp như bản đầu */
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .admin-card {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .header-title {
+            color: #c0392b;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+        }
+        .google-btn {
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+            padding: 12px;
+            border-radius: 50px;
+            width: 100%;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .google-btn:hover {
+            background-color: #f8f9fa;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
         .hidden { display: none !important; }
-        .google-btn { background: #fff; border: 1px solid #ddd; padding: 10px 20px; border-radius: 50px; font-weight: bold; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; }
-        .google-btn:hover { background: #f8f9fa; }
     </style>
 </head>
 <body>
 
 <div class="admin-card">
-    <h3 class="fw-bold text-danger mb-4"><i class="fa-solid fa-user-shield"></i> ADMIN ACCESS</h3>
+    <h3 class="header-title"><i class="fa-solid fa-user-shield me-2"></i>Quản Trị Viên</h3>
 
     <div id="login-section">
+        <p class="text-center text-muted mb-4">Đăng nhập để duyệt giao dịch VIP</p>
         <button onclick="loginAdmin()" class="google-btn">
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="24">
-            Đăng nhập với Google
+            Đăng nhập bằng Google
         </button>
     </div>
 
     <div id="tools-section" class="hidden">
-        <div class="alert alert-success text-start">
-            <i class="fa-solid fa-check-circle me-1"></i> Xin chào Admin.
+        <div class="alert alert-success small">
+            <i class="fa-solid fa-check-circle me-1"></i> Đã xác thực quyền Admin.
         </div>
-        <textarea id="smsInput" class="form-control mb-3" rows="4" placeholder="Dán tin nhắn ngân hàng vào đây..."></textarea>
-        <button class="btn btn-primary w-100 mb-3" onclick="checkTransaction()">DUYỆT GIAO DỊCH</button>
-        <div id="resultBox" class="bg-light p-3 rounded hidden"></div>
-        <button class="btn btn-outline-secondary w-100 mt-4" onclick="logout()">Thoát</button>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">Dán tin nhắn ngân hàng:</label>
+            <textarea id="smsInput" class="form-control" rows="4" placeholder="Ví dụ: TK 1234... +50,000... ND: TAQR UserXYZ..."></textarea>
+        </div>
+        
+        <button class="btn btn-primary w-100 mb-3 fw-bold" onclick="checkTransaction()">
+            <i class="fa-solid fa-magnifying-glass me-2"></i>Kiểm tra & Duyệt
+        </button>
+
+        <div id="resultBox" class="bg-light p-3 rounded hidden border">
+            </div>
+
+        <button class="btn btn-outline-secondary w-100 mt-4" onclick="logout()">
+            <i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất
+        </button>
     </div>
 </div>
 
 <script type="module">
+    // --- 1. IMPORT FIREBASE ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    // --- CẤU HÌNH MỚI ---
+    // --- 2. CẤU HÌNH THEGIOIQR-2026 (CHUẨN) ---
     const firebaseConfig = {
       apiKey: "AIzaSyCjZfDgE4JFRilXh5dCtrTFLA3-BlerRNE",
       authDomain: "thegioiqr-2026.firebaseapp.com",
@@ -52,61 +108,120 @@
       appId: "1:911702916265:web:d42d948ebb7e7a53dcbdb8",
       measurementId: "G-Q19JD7SBGG"
     };
-    
-    // !!! QUAN TRỌNG: ĐĂNG NHẬP 1 LẦN RỒI LẤY UID MỚI DÁN VÀO ĐÂY !!!
-    const ADMIN_UID = "DÁN_MÃ_UID_MỚI_CỦA_BẠN_VÀO_ĐÂY"; 
 
+    // --- 3. KHAI BÁO UID ADMIN (QUAN TRỌNG) ---
+    // Vì đổi database mới, bạn phải đăng nhập 1 lần để lấy UID mới trong Firebase Console
+    const ADMIN_UID = "DÁN_UID_CỦA_BẠN_VÀO_ĐÂY"; 
+
+    // Init
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
+    // --- 4. XỬ LÝ ĐĂNG NHẬP ---
     window.loginAdmin = async () => {
-        try { await signInWithPopup(auth, provider); } 
-        catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
+        try {
+            await signInWithPopup(auth, provider);
+        } catch (e) {
+            Swal.fire('Lỗi', e.message, 'error');
+        }
     };
 
+    // Theo dõi trạng thái
     onAuthStateChanged(auth, (user) => {
         if (user) {
             if (user.uid === ADMIN_UID) {
+                // Đúng Admin -> Hiện công cụ
                 document.getElementById('login-section').classList.add('hidden');
                 document.getElementById('tools-section').classList.remove('hidden');
             } else {
-                Swal.fire('Từ chối', 'Tài khoản này không phải Admin.', 'error').then(() => signOut(auth));
+                // Sai Admin -> Đuổi ra
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Truy cập bị từ chối',
+                    text: 'Tài khoản Google này không phải là Admin.',
+                    confirmButtonText: 'Thoát'
+                }).then(() => {
+                    signOut(auth);
+                });
             }
         } else {
+            // Chưa đăng nhập -> Hiện nút login
             document.getElementById('login-section').classList.remove('hidden');
             document.getElementById('tools-section').classList.add('hidden');
         }
     });
 
+    // --- 5. XỬ LÝ DUYỆT TIỀN ---
     window.checkTransaction = async () => {
         const sms = document.getElementById('smsInput').value;
         const resultBox = document.getElementById('resultBox');
+        
+        // Regex tìm mã TAQR
         const match = sms.match(/TAQR\s*([a-zA-Z0-9]+)/i);
+
         if(match && match[1]) {
             const targetUid = match[1].trim();
-            resultBox.classList.remove('hidden'); resultBox.innerHTML = 'Đang tra cứu...';
+            resultBox.classList.remove('hidden');
+            resultBox.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Đang tra cứu...';
+
             try {
-                const snap = await getDoc(doc(db, "users", targetUid));
+                const userRef = doc(db, "users", targetUid);
+                const snap = await getDoc(userRef);
+
                 if(snap.exists()) {
-                    const d = snap.data();
-                    resultBox.innerHTML = `<div class="alert alert-info py-1">${d.email}</div><button class="btn btn-success w-100" onclick="confirmUpgrade('${targetUid}')">XÁC NHẬN VIP</button>`;
-                } else { resultBox.innerHTML = 'Không tìm thấy user'; }
-            } catch (e) { resultBox.innerHTML = e.message; }
-        } else { Swal.fire('Lỗi', 'Không tìm thấy mã TAQR', 'warning'); }
+                    const data = snap.data();
+                    const expiry = data.expiryDate ? new Date(data.expiryDate.toDate()).toLocaleDateString() : 'Chưa có';
+                    
+                    resultBox.innerHTML = `
+                        <div class="alert alert-info p-2 mb-2">
+                            <strong>User:</strong> ${data.email}<br>
+                            <strong>Hạn cũ:</strong> ${expiry}
+                        </div>
+                        <button class="btn btn-success w-100 fw-bold" onclick="confirmUpgrade('${targetUid}')">
+                            <i class="fa-solid fa-check"></i> XÁC NHẬN VIP (30 NGÀY)
+                        </button>
+                    `;
+                } else {
+                    resultBox.innerHTML = '<div class="text-danger fw-bold">Không tìm thấy User này.</div>';
+                }
+            } catch (e) {
+                resultBox.innerHTML = `<div class="text-danger">Lỗi: ${e.message}</div>`;
+            }
+        } else {
+            Swal.fire('Không tìm thấy mã', 'Tin nhắn không chứa cú pháp "TAQR...".', 'warning');
+        }
     };
 
+    // --- 6. XÁC NHẬN CỘNG NGÀY ---
     window.confirmUpgrade = async (uid) => {
         try {
-            const ref = doc(db, "users", uid); const s = await getDoc(ref); const d = s.data();
-            let date = new Date();
-            if(d.isPremium && d.expiryDate && d.expiryDate.toDate() > date) date = d.expiryDate.toDate();
-            date.setDate(date.getDate() + 30);
-            await updateDoc(ref, { isPremium: true, expiryDate: date, lastPaymentDate: serverTimestamp() });
-            Swal.fire('Thành công', '', 'success'); document.getElementById('smsInput').value=''; document.getElementById('resultBox').classList.add('hidden');
-        } catch(e) { Swal.fire('Lỗi', e.message, 'error'); }
+            const userRef = doc(db, "users", uid);
+            const snap = await getDoc(userRef);
+            const data = snap.data();
+            
+            let newDate = new Date();
+            // Logic cộng dồn ngày
+            if(data.isPremium && data.expiryDate && data.expiryDate.toDate() > new Date()) {
+                newDate = data.expiryDate.toDate();
+            }
+            newDate.setDate(newDate.getDate() + 30);
+
+            await updateDoc(userRef, {
+                isPremium: true,
+                expiryDate: newDate,
+                lastPaymentDate: serverTimestamp()
+            });
+
+            Swal.fire('Thành công!', 'Đã kích hoạt VIP cho khách hàng.', 'success');
+            document.getElementById('smsInput').value = '';
+            document.getElementById('resultBox').classList.add('hidden');
+        } catch (e) {
+            Swal.fire('Lỗi', e.message, 'error');
+        }
     };
+
     window.logout = () => signOut(auth);
 </script>
 </body>
