@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TA QR Biz - Google Login</title>
+    <title>Thế Giới QR - Tạo Mã QR Động</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -14,7 +14,7 @@
         .auth-container { max-width: 400px; margin: 80px auto; text-align: center; }
         .dashboard-container { max-width: 1200px; margin: 30px auto; display: none; padding: 0 15px; }
         .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .google-btn { background: white; color: #333; border: 1px solid #ddd; padding: 12px; border-radius: 50px; width: 100%; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .google-btn { background: white; color: #333; border: 1px solid #ddd; padding: 12px; border-radius: 50px; width: 100%; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; }
         .google-btn:hover { background: #f8f9fa; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.15); }
         .vip-badge { background-color: #FFD700; color: #333; padding: 5px 12px; border-radius: 20px; font-weight: bold; }
         .qr-thumb { width: 60px; height: 60px; object-fit: contain; border: 1px solid #ddd; border-radius: 4px; }
@@ -32,12 +32,12 @@
 
 <div id="auth-screen" class="container auth-container">
     <div class="card p-5">
-        <h2 class="fw-bold text-primary mb-3"><i class="fa-solid fa-qrcode"></i> TA QR Biz</h2>
+        <h2 class="fw-bold text-primary mb-3"><i class="fa-solid fa-qrcode"></i> Thế Giới QR</h2>
         <p class="text-muted mb-4">Nền tảng quản lý mã QR chuyên nghiệp</p>
         
         <button onclick="loginGoogle()" class="google-btn">
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="24">
-            Tiếp tục với Google
+            Đăng nhập bằng Google
         </button>
         <p class="text-muted mt-3 small">Không cần nhớ mật khẩu. Nhanh chóng & Bảo mật.</p>
     </div>
@@ -95,9 +95,19 @@
     import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy, serverTimestamp, updateDoc, increment, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    // --- CẤU HÌNH ---
-    const firebaseConfig = { apiKey: "AIzaSyCzWjfcD5Dgq7V-i2izb9tKLR6QM6qWPQo", authDomain: "tavietnam-78ae8.firebaseapp.com", projectId: "tavietnam-78ae8", storageBucket: "tavietnam-78ae8.firebasestorage.app", messagingSenderId: "670121705534", appId: "1:670121705534:web:1027ad98550573ad37116f" };
-    const BANK_BIN = "970422"; const BANK_ACC = "0987654321";
+    // --- CẤU HÌNH MỚI (thegioiqr-2026) ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyCjZfDgE4JFRilXh5dCtrTFLA3-BlerRNE",
+      authDomain: "thegioiqr-2026.firebaseapp.com",
+      projectId: "thegioiqr-2026",
+      storageBucket: "thegioiqr-2026.firebasestorage.app",
+      messagingSenderId: "911702916265",
+      appId: "1:911702916265:web:d42d948ebb7e7a53dcbdb8",
+      measurementId: "G-Q19JD7SBGG"
+    };
+
+    const BANK_BIN = "970422"; // Mã Ngân hàng (MB)
+    const BANK_ACC = "0987654321"; // STK của bạn
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -111,7 +121,7 @@
     window.loginGoogle = async () => {
         try {
             const result = await signInWithPopup(auth, provider);
-            // Sau khi login, check xem có doc chưa, chưa thì tạo
+            // Kiểm tra user mới
             const userRef = doc(db, "users", result.user.uid);
             const snap = await getDoc(userRef);
             if (!snap.exists()) {
@@ -124,13 +134,14 @@
                 });
             }
         } catch (error) {
-            Swal.fire('Lỗi', error.message, 'error');
+            Swal.fire('Lỗi đăng nhập', error.message, 'error');
         }
     };
 
-    // --- LOGIC CHUNG (Giống Ver 3.0 nhưng bỏ phần Auth Form) ---
+    // --- LOGIC CHUNG ---
     const scanId = new URLSearchParams(window.location.search).get('id');
     if (scanId) {
+        // Mode Redirect
         document.getElementById('auth-screen').remove(); document.getElementById('dashboard-screen').remove();
         document.getElementById('redirect-screen').style.display = 'flex';
         (async () => {
@@ -142,6 +153,7 @@
             } else { alert("Mã QR không tồn tại!"); }
         })();
     } else {
+        // Mode Dashboard
         onAuthStateChanged(auth, async (u) => {
             if (u) {
                 currentUser = u;
