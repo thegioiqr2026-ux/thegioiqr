@@ -39,32 +39,46 @@ body {
     .nav-link:hover::after { width: 30px; }
 }
 
-/* --- SIDEBAR MOBILE --- */
+/* --- SIDEBAR TRƯỢT (OFF-CANVAS) MOBILE --- */
 @media (max-width: 991px) {
     .navbar-collapse {
-        left: -100%; width: 300px;
-        background: #fff; border-radius: 0 20px 20px 0;
-    }
-    
-    .sidebar-section { padding: 20px; }
-    
-    /* User Profile Card */
-    .user-profile {
-        background: var(--primary-gradient);
-        margin: 15px; border-radius: 15px;
-        color: white; box-shadow: 0 10px 20px rgba(0,98,255,0.2);
+        position: fixed;
+        top: 0;
+        left: -320px; /* Giấu hoàn toàn sang trái */
+        width: 300px;
+        height: 100vh;
+        background: #fff;
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex !important;
+        flex-direction: column;
+        z-index: 2000;
+        box-shadow: 10px 0 30px rgba(0,0,0,0.1);
+        border-radius: 0 25px 25px 0;
+        overflow-y: auto;
     }
 
-    /* Menu Item Styling */
-    .navbar-nav .nav-link {
-        display: flex; align-items: center;
-        padding: 12px 15px !important;
-        margin-bottom: 5px; border-radius: 10px;
+    /* Khi Sidebar được kích hoạt */
+    .navbar-collapse.show {
+        transform: translateX(320px); /* Đẩy vào trong màn hình */
     }
-    .navbar-nav .nav-link i { width: 30px; font-size: 1.1rem; }
-    .navbar-nav .nav-link:hover { background: rgba(0,98,255,0.05); }
+
+    /* Màn mờ (Overlay) đè lên nội dung */
+    .menu-overlay {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: rgba(0,0,0,0.4);
+        backdrop-filter: blur(4px);
+        z-index: 1999;
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    .menu-overlay.active {
+        display: block;
+        opacity: 1;
+    }
 }
-
 /* --- BUTTONS --- */
 .btn-primary {
     background: var(--primary-gradient);
