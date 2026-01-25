@@ -13,33 +13,63 @@ const router = {
 // Hàm nạp Header
 function loadHeader() {
     document.getElementById('header-component').innerHTML = `
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+    <div class="menu-overlay" id="overlay" onclick="toggleMobileMenu()"></div>
+    <nav class="navbar navbar-expand-lg fixed-top">
         <div class="container">
-            <a class="navbar-brand" href="#" onclick="router.navigate('home')">THEGIOIQR</a>
-            <button class="navbar-toggler" type="button" onclick="document.getElementById('mainNavbar').classList.toggle('show')">
-                <span class="navbar-toggler-icon"></span>
+            <button class="navbar-toggler border-0" type="button" onclick="toggleMobileMenu()">
+                <span class="fa-solid fa-bars-staggered" style="color: #0062ff; font-size: 1.5rem;"></span>
             </button>
+            
+            <a class="navbar-brand d-flex align-items-center" href="#" onclick="router.navigate('home')">
+                <div class="bg-primary text-white p-2 rounded-3 me-2" style="width:35px; height:35px; display:flex; align-items:center; justify-content:center;">
+                    <i class="fa-solid fa-qrcode"></i>
+                </div>
+                <span style="letter-spacing: 1px; color: #2d3436;">THEGIOIQR</span>
+            </a>
+
             <div class="collapse navbar-collapse" id="mainNavbar">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="#" onclick="router.navigate('home')">Trang chủ</a></li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#">Công cụ QR</a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" onclick="router.navigate('qr_gen')">Tạo QR Miễn phí</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#">An toàn LOTO</a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" onclick="navigateToLoto()">Mô phỏng LOTO</a></li>
-                        </ul>
-                    </li>
-                </ul>
+                <div class="sidebar-section user-profile d-lg-none">
+                    <div class="d-flex align-items-center">
+                        <img src="https://ui-avatars.com/api/?name=Tran+Van+Thuy&background=random" class="rounded-circle me-3 border border-2 border-white" width="50">
+                        <div>
+                            <div class="fw-bold">Trần Văn Thủy</div>
+                            <small class="opacity-75">thegioiqr2026@gmail.com</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section w-100">
+                    <p class="small text-muted d-lg-none mb-2" style="font-size: 10px; letter-spacing: 1px;">MENU CHÍNH</p>
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item"><a class="nav-link" href="#" onclick="router.navigate('home')"><i class="fa-solid fa-house d-lg-none"></i> Trang chủ</a></li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#"><i class="fa-solid fa-qrcode d-lg-none"></i> Công cụ QR</a>
+                            <ul class="dropdown-menu border-0 shadow-sm">
+                                <li><a class="dropdown-item" href="#" onclick="router.navigate('qr_gen')">Tạo QR Miễn phí</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item"><a class="nav-link" href="#" onclick="navigateToLoto()"><i class="fa-solid fa-lock d-lg-none"></i> Mô phỏng LOTO</a></li>
+                    </ul>
+                </div>
+
+                <div class="sidebar-section mt-auto d-lg-none">
+                    <p class="small text-muted mb-2" style="font-size: 10px; letter-spacing: 1px;">THÔNG TIN</p>
+                    <ul class="navbar-nav">
+                        <li class="nav-item"><a class="nav-link" href="#"><i class="fa-solid fa-circle-question"></i> Hướng dẫn</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#"><i class="fa-solid fa-user-tie"></i> Tác giả</a></li>
+                    </ul>
+                </div>
+
+                <div class="sidebar-section d-lg-none">
+                    <button class="btn btn-light text-danger w-100 rounded-3" onclick="logUsage('Logout')">
+                        <i class="fa-solid fa-right-from-bracket me-2"></i> Đăng xuất
+                    </button>
+                </div>
             </div>
         </div>
-    </nav>`;
+    </nav>
+    <div style="height: 80px;"></div> `;
 }
-
 // Hàm nạp Footer
 function loadFooter() {
     document.getElementById('footer-component').innerHTML = `
