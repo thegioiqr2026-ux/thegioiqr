@@ -1,34 +1,73 @@
-/* Sidebar Mobile (Bên trái) */
-@media (max-width: 991px) {
-    .navbar-collapse {
-        position: fixed;
-        top: 0;
-        left: -100%; /* Giấu bên trái */
-        width: 280px;
-        height: 100%;
-        background: white;
-        transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        z-index: 1050;
-        display: flex !important;
-        flex-direction: column;
-        padding: 0;
-        box-shadow: 5px 0 15px rgba(0,0,0,0.1);
-    }
-    .navbar-collapse.show { left: 0; }
-    
-    /* Overlay khi mở menu */
-    .menu-overlay {
-        display: none;
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.5);
-        z-index: 1040;
-    }
-    .menu-overlay.active { display: block; }
+:root {
+    --primary-gradient: linear-gradient(135deg, #0062ff 0%, #003180 100%);
+    --bg-light: #f4f7fa;
+    --text-main: #2d3436;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Các phân khu trong Sidebar */
-.sidebar-section { padding: 15px 20px; border-bottom: 1px solid #eee; }
-.user-profile { background: var(--primary-color); color: white; }
-.user-profile img { width: 50px; height: 50px; border-radius: 50%; margin-bottom: 10px; }
-.logout-section { margin-top: auto; border-bottom: none; }
+body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background-color: var(--bg-light);
+    color: var(--text-main);
+}
+
+/* --- NAV NGANG PC --- */
+.navbar {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.8) !important;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding: 15px 0;
+}
+
+.nav-link {
+    font-weight: 500;
+    color: #636e72 !important;
+    padding: 0.5rem 1.2rem !important;
+    position: relative;
+    transition: var(--transition);
+}
+
+.nav-link:hover { color: #0062ff !important; }
+
+/* Hiệu ứng gạch chân hiện đại */
+@media (min-width: 992px) {
+    .nav-link::after {
+        content: ''; position: absolute; bottom: 0; left: 50%;
+        width: 0; height: 2px; background: #0062ff;
+        transition: var(--transition); transform: translateX(-50%);
+    }
+    .nav-link:hover::after { width: 30px; }
+}
+
+/* --- SIDEBAR MOBILE --- */
+@media (max-width: 991px) {
+    .navbar-collapse {
+        left: -100%; width: 300px;
+        background: #fff; border-radius: 0 20px 20px 0;
+    }
+    
+    .sidebar-section { padding: 20px; }
+    
+    /* User Profile Card */
+    .user-profile {
+        background: var(--primary-gradient);
+        margin: 15px; border-radius: 15px;
+        color: white; box-shadow: 0 10px 20px rgba(0,98,255,0.2);
+    }
+
+    /* Menu Item Styling */
+    .navbar-nav .nav-link {
+        display: flex; align-items: center;
+        padding: 12px 15px !important;
+        margin-bottom: 5px; border-radius: 10px;
+    }
+    .navbar-nav .nav-link i { width: 30px; font-size: 1.1rem; }
+    .navbar-nav .nav-link:hover { background: rgba(0,98,255,0.05); }
+}
+
+/* --- BUTTONS --- */
+.btn-primary {
+    background: var(--primary-gradient);
+    border: none; border-radius: 10px;
+    padding: 10px 25px; box-shadow: 0 4px 15px rgba(0,98,255,0.3);
+}
