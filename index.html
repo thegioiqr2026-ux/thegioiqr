@@ -11,7 +11,24 @@
 </head>
 <body>
 
-    <div id="header-component"></div>
+    <div id="header-component">
+        <div id="network-status" class="badge rounded-pill bg-success ms-2" style="font-size: 0.7rem;">Online</div>
+        
+        <script>
+            // Logic cập nhật trạng thái mạng trên giao diện
+            window.addEventListener('online', () => {
+                const status = document.getElementById('network-status');
+                status.innerText = 'Online';
+                status.className = 'badge rounded-pill bg-success ms-2';
+            });
+            window.addEventListener('offline', () => {
+                const status = document.getElementById('network-status');
+                status.innerText = 'Offline';
+                status.className = 'badge rounded-pill bg-secondary ms-2';
+            });
+        </script>
+        
+    </div>
 
     <main id="app-content">
         <div class="container" id="page-render">
