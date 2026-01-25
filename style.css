@@ -40,45 +40,66 @@ body {
 }
 
 /* --- SIDEBAR TRƯỢT (OFF-CANVAS) MOBILE --- */
+/* --- SIDEBAR TRƯỢT (OFF-CANVAS) v1.9 --- */
 @media (max-width: 991px) {
     .navbar-collapse {
         position: fixed;
         top: 0;
-        left: -320px; /* Giấu hoàn toàn sang trái */
-        width: 300px;
+        left: -320px; /* Ẩn ngoài màn hình bên trái */
+        width: 280px;
         height: 100vh;
-        background: #fff;
+        background: #ffffff;
         transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex !important;
         flex-direction: column;
-        z-index: 2000;
-        box-shadow: 10px 0 30px rgba(0,0,0,0.1);
+        z-index: 2100; /* Cao hơn Overlay */
+        box-shadow: none;
         border-radius: 0 25px 25px 0;
-        overflow-y: auto;
+        visibility: hidden; /* Tránh cản trở khi đóng */
     }
 
-    /* Khi Sidebar được kích hoạt */
     .navbar-collapse.show {
-        transform: translateX(320px); /* Đẩy vào trong màn hình */
+        transform: translateX(320px);
+        visibility: visible;
+        box-shadow: 15px 0 30px rgba(0,0,0,0.15);
     }
 
-    /* Màn mờ (Overlay) đè lên nội dung */
+    /* Overlay - Màn mờ điều chỉnh lại */
     .menu-overlay {
         position: fixed;
-        top: 0; left: 0;
-        width: 100vw; height: 100vh;
-        background: rgba(0,0,0,0.4);
-        backdrop-filter: blur(4px);
-        z-index: 1999;
-        display: none;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(3px);
+        z-index: 2000; /* Thấp hơn Sidebar nhưng cao hơn Content */
+        display: none; /* Mặc định ẩn hoàn toàn */
         opacity: 0;
         transition: opacity 0.3s ease;
     }
+
+    /* Chỉ hiển thị khi menu-overlay có class active */
     .menu-overlay.active {
         display: block;
         opacity: 1;
     }
+
+    /* Ngăn cuộn trang khi đang mở menu */
+    body.menu-open {
+        overflow: hidden;
+    }
 }
+
+/* User Profile Sidebar v1.9 */
+.user-profile {
+    background: var(--primary-gradient);
+    padding: 25px 20px;
+    margin: 10px;
+    border-radius: 20px;
+    color: white;
+}
+
 /* --- BUTTONS --- */
 .btn-primary {
     background: var(--primary-gradient);
