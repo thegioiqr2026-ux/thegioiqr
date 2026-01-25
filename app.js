@@ -61,3 +61,67 @@ window.onload = () => {
     loadFooter();
     router.navigate('home');
 };
+
+// --- Hệ thống Ghi Log ---
+function logUsage(featureName) {
+    const logData = {
+        user: "tranvanthuy@gmail.com", // Giả lập user từ Firebase
+        feature: featureName,
+        time: new Date().toLocaleString(),
+        platform: window.matchMedia('(display-mode: standalone)').matches ? "PWA" : "Web"
+    };
+    console.log("Logging Activity:", logData);
+    // Sau này sẽ push vào Firebase: db.collection('logs').add(logData);
+}
+
+// --- Nạp Header với Sidebar 4 phần ---
+function loadHeader() {
+    document.getElementById('header-component').innerHTML = `
+    <div class="menu-overlay" id="overlay" onclick="toggleMobileMenu()"></div>
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+        <div class="container">
+            <button class="navbar-toggler border-0" type="button" onclick="toggleMobileMenu()">
+                <i class="fa-solid fa-bars-staggered"></i>
+            </button>
+            <a class="navbar-brand mx-auto" href="#" onclick="router.navigate('home')">THEGIOIQR</a>
+            
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                <div class="sidebar-section user-profile d-lg-none">
+                    <img src="https://via.placeholder.com/50" alt="User">
+                    <h6>Trần Văn Thủy</h6>
+                    <small>thegioiqr2026@gmail.com</small>
+                </div>
+
+                <div class="sidebar-section">
+                    <ul class="navbar-nav">
+                        <li class="nav-item"><a class="nav-link" href="#" onclick="router.navigate('home')"><i class="fa fa-home me-2"></i>Trang chủ</a></li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#">Công cụ QR</a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="router.navigate('qr_gen'); logUsage('Truy cập Tạo QR')">Tạo QR Miễn phí</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item"><a class="nav-link" href="#" onclick="navigateToLoto(); logUsage('Truy cập LOTO')">Mô phỏng LOTO</a></li>
+                    </ul>
+                </div>
+
+                <div class="sidebar-section">
+                    <p class="small text-muted mb-2">HỖ TRỢ</p>
+                    <ul class="navbar-nav">
+                        <li class="nav-item"><a class="nav-link" href="#"><i class="fa fa-book me-2"></i>Hướng dẫn</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#"><i class="fa fa-info-circle me-2"></i>Thông tin tác giả</a></li>
+                    </ul>
+                </div>
+
+                <div class="sidebar-section logout-section mt-auto">
+                    <button class="btn btn-outline-danger w-100" onclick="logUsage('Đăng xuất')"><i class="fa fa-sign-out-alt me-2"></i>Đăng xuất</button>
+                </div>
+            </div>
+        </div>
+    </nav>`;
+}
+
+function toggleMobileMenu() {
+    document.getElementById('mainNavbar').classList.toggle('show');
+    document.getElementById('overlay').classList.toggle('active');
+}
