@@ -125,3 +125,58 @@ function toggleMobileMenu() {
     document.getElementById('mainNavbar').classList.toggle('show');
     document.getElementById('overlay').classList.toggle('active');
 }
+
+// --- Đăng ký Service Worker ---
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('SW Registered'))
+            .catch(err => console.log('SW Failed', err));
+    });
+}
+
+// --- Hệ thống Ghi Log Nâng cao ---
+function logUsage(featureName) {
+    const isOnline = navigator.onLine;
+    const logData = {
+        user: "tranvanthuy@gmail.com",
+        feature: featureName,
+        time: new Date().toLocaleString(),
+        status: isOnline ? "Online" : "Offline", // Phân biệt trạng thái
+        platform: window.matchMedia('(display-mode: standalone)').matches ? "PWA" : "Web"
+    };
+
+    if (isOnline) {
+        sendToFirebase(logData);
+    } else {
+        saveLogOffline(logData);
+    }
+}
+
+// Giả lập lưu vào IndexedDB khi mất mạng
+function saveLogOffline(data) {
+    console.warn("Đang Offline. Log đã được đưa vào hàng chờ:", data);
+    let offlineLogs = JSON.parse(localStorage.getItem('offline_logs') || '[]');
+    offlineLogs.push(data);
+    localStorage.setItem('offline_logs', JSON.stringify(offlineLogs));
+}
+
+// Gửi dữ liệu về Firebase
+function sendToFirebase(data) {
+    console.log("Đang gửi log về Firebase:", data);
+    // Code Firebase của bạn sẽ ở đây
+}
+
+// Tự động kiểm tra mạng để đồng bộ hóa
+window.addEventListener('online', () => {
+    console.log("Đã có mạng trở lại! Đang đồng bộ dữ liệu...");
+    let offlineLogs = JSON.parse(localStorage.getItem('offline_logs') || '[]');
+    if (offlineLogs.length > 0) {
+        offlineLogs.forEach(log => {
+            log.status = "Offline-to-Online"; // Đánh dấu đây là dữ liệu bù
+            sendToFirebase(log);
+        });
+        localStorage.removeItem('offline_logs');
+        alert("Dữ liệu hoạt động offline đã được đồng bộ!");
+    }
+});
