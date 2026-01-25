@@ -108,52 +108,84 @@ function logUsage(featureName) {
 function loadHeader() {
     document.getElementById('header-component').innerHTML = `
     <div class="menu-overlay" id="overlay" onclick="toggleMobileMenu()"></div>
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+    
+    <nav class="navbar navbar-expand-lg fixed-top shadow-sm">
         <div class="container">
             <button class="navbar-toggler border-0" type="button" onclick="toggleMobileMenu()">
-                <i class="fa-solid fa-bars-staggered"></i>
+                <span class="fa-solid fa-bars-staggered" style="color: #0062ff; font-size: 1.5rem;"></span>
             </button>
-            <a class="navbar-brand mx-auto" href="#" onclick="router.navigate('home')">THEGIOIQR</a>
             
+            <a class="navbar-brand d-flex align-items-center" href="#" onclick="router.navigate('home')">
+                <div class="bg-primary text-white p-2 rounded-3 me-2" style="width:35px; height:35px; display:flex; align-items:center; justify-content:center;">
+                    <i class="fa-solid fa-qrcode"></i>
+                </div>
+                <span style="font-weight: 700; color: #2d3436;">THEGIOIQR</span>
+            </a>
+
             <div class="collapse navbar-collapse" id="mainNavbar">
                 <div class="sidebar-section user-profile d-lg-none">
-                    <img src="https://via.placeholder.com/50" alt="User">
-                    <h6>Trần Văn Thủy</h6>
-                    <small>thegioiqr2026@gmail.com</small>
+                    <div class="d-flex align-items-center mb-2">
+                        <img src="https://ui-avatars.com/api/?name=Tran+Van+Thuy&background=random" class="rounded-circle me-3 border border-2 border-white" width="50">
+                        <div class="overflow-hidden">
+                            <div class="fw-bold text-truncate">Trần Văn Thủy</div>
+                            <small class="opacity-75 text-truncate d-block">thegioiqr2026@gmail.com</small>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="sidebar-section">
-                    <ul class="navbar-nav">
-                        <li class="nav-item"><a class="nav-link" href="#" onclick="router.navigate('home')"><i class="fa fa-home me-2"></i>Trang chủ</a></li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#">Công cụ QR</a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#" onclick="router.navigate('qr_gen'); logUsage('Truy cập Tạo QR')">Tạo QR Miễn phí</a></li>
-                            </ul>
+                    <p class="small text-muted d-lg-none mb-3" style="font-size: 10px; font-weight: 800; letter-spacing: 1px;">MENU CHÍNH</p>
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="router.navigate('home')">
+                                <i class="fa-solid fa-house d-lg-none me-2"></i> Trang chủ
+                            </a>
                         </li>
-                        <li class="nav-item"><a class="nav-link" href="#" onclick="navigateToLoto(); logUsage('Truy cập LOTO')">Mô phỏng LOTO</a></li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="router.navigate('qr_gen')">
+                                <i class="fa-solid fa-qrcode d-lg-none me-2"></i> Công cụ QR
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="navigateToLoto()">
+                                <i class="fa-solid fa-lock d-lg-none me-2"></i> Mô phỏng LOTO
+                            </a>
+                        </li>
                     </ul>
                 </div>
 
-                <div class="sidebar-section">
-                    <p class="small text-muted mb-2">HỖ TRỢ</p>
+                <div class="sidebar-section mt-auto d-lg-none bg-light">
+                    <p class="small text-muted mb-3" style="font-size: 10px; font-weight: 800; letter-spacing: 1px;">THÔNG TIN & HỖ TRỢ</p>
                     <ul class="navbar-nav">
-                        <li class="nav-item"><a class="nav-link" href="#"><i class="fa fa-book me-2"></i>Hướng dẫn</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#"><i class="fa fa-info-circle me-2"></i>Thông tin tác giả</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#"><i class="fa-solid fa-circle-info me-2"></i> Hướng dẫn sử dụng</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#"><i class="fa-solid fa-user-gear me-2"></i> Thông tin tác giả</a></li>
                     </ul>
                 </div>
 
-                <div class="sidebar-section logout-section mt-auto">
-                    <button class="btn btn-outline-danger w-100" onclick="logUsage('Đăng xuất')"><i class="fa fa-sign-out-alt me-2"></i>Đăng xuất</button>
+                <div class="sidebar-section d-lg-none mb-3">
+                    <button class="btn btn-outline-danger w-100 rounded-pill" onclick="logUsage('Logout')">
+                        <i class="fa-solid fa-power-off me-2"></i> Đăng xuất
+                    </button>
                 </div>
             </div>
         </div>
-    </nav>`;
+    </nav>
+    <div style="height: 75px;"></div>
+    `;
 }
 
+// Logic điều khiển đóng mở Sidebar
 function toggleMobileMenu() {
-    document.getElementById('mainNavbar').classList.toggle('show');
-    document.getElementById('overlay').classList.toggle('active');
+    const menu = document.getElementById('mainNavbar');
+    const overlay = document.getElementById('overlay');
+    
+    if (menu.classList.contains('show')) {
+        menu.classList.remove('show');
+        overlay.classList.remove('active');
+    } else {
+        menu.classList.add('show');
+        overlay.classList.add('active');
+    }
 }
 
 // --- Đăng ký Service Worker ---
