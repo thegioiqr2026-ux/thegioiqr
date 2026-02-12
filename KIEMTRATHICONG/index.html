@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiểm tra An toàn Điện 110kV - Version 1.0</title>
+    <style>
+        :root {
+            --primary-color: #003366;
+            --accent-color: #ffcc00;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            text-align: center;
+            color: var(--primary-color);
+        }
+        .section {
+            display: none;
+        }
+        .active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        input[type="text"], input[type="tel"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .question {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+        }
+        .options label {
+            font-weight: normal;
+            display: block;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #002244;
+        }
+        /* Style cho Giấy chứng nhận */
+        #certificate {
+            border: 10px double var(--primary-color);
+            padding: 40px;
+            text-align: center;
+            background: #fff;
+            position: relative;
+        }
+        .cert-header {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #d4af37;
+        }
+        .cert-content {
+            margin: 20px 0;
+        }
+        .stamp {
+            margin-top: 30px;
+            text-align: right;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="step-1" class="section active">
+        <h1>THÔNG TIN NGƯỜI KIỂM TRA</h1>
+        <p style="text-align: center;">Vui lòng nhập đầy đủ thông tin trước khi bắt đầu bài kiểm tra an toàn điện.</p>
+        <div class="form-group">
+            <label>Họ và Tên:</label>
+            <input type="text" id="user-name" placeholder="Nguyễn Văn A" required>
+        </div>
+        <div class="form-group">
+            <label>Số CCCD:</label>
+            <input type="text" id="user-id" placeholder="079xxxxxxxx" required>
+        </div>
+        <div class="form-group">
+            <label>Số điện thoại:</label>
+            <input type="tel" id="user-phone" placeholder="09xxxxxxxx" required>
+        </div>
+        <button onclick="startQuiz()">Bắt đầu bài kiểm tra</button>
+    </div>
+
+    <div id="step-2" class="section">
+        <h2 id="quiz-title">CÂU HỎI KIỂM TRA KIẾN THỨC</h2>
+        <form id="quiz-form"></form>
+        <button onclick="submitQuiz()">Nộp bài</button>
+    </div>
+
+    <div id="step-3" class="section">
+        <div id="certificate">
+            <div class="cert-header">GIẤY CHỨNG NHẬN HOÀN THÀNH</div>
+            <div class="cert-content">
+                <p>Chứng nhận ông/bà:</p>
+                <h3 id="res-name">---</h3>
+                <p>Số CCCD: <span id="res-id">---</span> | SĐT: <span id="res-phone">---</span></p>
+                <p>Đã tham gia kiểm tra kiến thức an toàn khi thi công gần hành lang bảo vệ an toàn lưới điện cao áp 110kV.</p>
+                <hr>
+                <p style="font-size: 1.2em;">Kết quả: <strong id="res-score">0</strong>/15 câu</p>
+                <p id="res-status" style="font-weight: bold;"></p>
+            </div>
+            <div class="stamp">
+                <p>Ngày thực hiện: <span id="res-date"></span></p>
+                <p>Hệ thống quản lý an toàn Công ty LĐCT</p>
+            </div>
+        </div>
+        <button onclick="window.print()" style="margin-top: 20px; background: #28a745;">In kết quả</button>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        { q: "Trước khi thi công khu vực trong và gần hành lang an toàn lưới điện, đơn vị thi công phải làm gì? [cite: 25]", a: ["Tự ý thi công", "Lập phương án và biện pháp an toàn gửi đến Công ty LĐCT để thỏa hiệp", "Chỉ cần báo qua điện thoại", "Không cần làm gì"], c: 1 },
+        { q: "Người lao động làm việc tại công trường phải đạt bao nhiêu điểm trong bài kiểm tra kiến thức an toàn? ", a: ["5 điểm", "6 điểm", "Từ 7 điểm trở lên", "10 điểm"], c: 2 },
+        { q: "Hệ thống camera giám sát công trình bắt buộc phải có thiết bị gì để nhắc nhở? [cite: 29]", a: ["Đèn tín hiệu", "Loa phóng thanh", "Còi báo động", "Màn hình tivi"], c: 1 },
+        { q: "Các yêu cầu cắt điện đường dây 110kV phải được đăng ký trước bao nhiêu ngày? [cite: 31]", a: ["7 ngày", "15 ngày", "30 ngày", "60 ngày"], c: 2 },
+        { q: "Khoảng cách an toàn tối thiểu theo quy định khi thi công (không cắt điện) là bao nhiêu mét? [cite: 36]", a: ["1 mét", "2 mét", "3 mét", "5 mét"], c: 2 },
+        { q: "Biển cảnh báo an toàn phải được lắp đặt và dán tại đâu? [cite: 41]", a: ["Cổng công ty", "Cabin các phương tiện thi công cơ giới", "Cột điện cao thế", "Phòng bảo vệ"], c: 1 },
+        { q: "Khi phát hiện bất thường về lưới điện tại công trường, hành động đúng là? [cite: 44]", a: ["Tiếp tục làm việc", "Ngừng ngay việc thi công và thông báo cho Công ty LĐCT", "Tự ý sửa chữa", "Bỏ chạy"], c: 1 },
+        { q: "Giàn giáo và lưới che chắn thi công phải đảm bảo yêu cầu gì? [cite: 42]", a: ["Màu sắc đẹp", "Làm bằng gỗ", "Neo buộc chắc chắn không để ngã đổ vào đường dây", "Không cần che chắn"], c: 2 },
+        { q: "Chi phí thực hiện các biện pháp kỹ thuật đảm bảo an toàn do ai chịu trách nhiệm? [cite: 37]", a: ["Đơn vị điện lực", "Nhà nước", "Chủ đầu tư và đơn vị thi công", "Cả 3 bên"], c: 2 },
+        { q: "Đối với phương tiện hoạt động ngoài hành lang, cần bố trí ai để giám sát? [cite: 38]", a: ["Bảo vệ", "Người giám sát cảnh giới", "Kế toán", "Không cần ai"], c: 1 },
+        { q: "Hành vi nào bị cấm trong hành lang an toàn cáp điện? [cite: 39]", a: ["Đốt lửa, xếp chất dễ cháy nổ", "Trồng cỏ", "Đi bộ", "Lắp đèn chiếu sáng"], c: 0 },
+        { q: "Sau khi thi công hoàn tất, đơn vị thi công phải báo cho ai để kiểm tra? [cite: 49]", a: ["UBND Phường", "Chủ đầu tư và đơn vị vận hành lưới điện", "Công an", "Hàng xóm"], c: 1 },
+        { q: "Độ cao tối đa của nhà dự kiến xây dựng trong hành lang an toàn tại địa chỉ số 453 là? [cite: 22]", a: ["11.0 mét", "15.0 mét", "25.0 mét", "30.0 mét"], c: 0 },
+        { q: "Nếu phát hiện khoảng cách công trình không đúng thỏa thuận, chủ đầu tư phải? [cite: 47]", a: ["Nộp phạt", "Tháo dỡ ngay", "Giữ nguyên hiện trạng", "Xin giấy phép mới"], c: 1 },
+        { q: "Thời gian thực hiện thỏa thuận này kéo dài đến ngày nào? [cite: 55]", a: ["30/12/2025", "30/12/2026", "01/01/2026", "Hết năm 2027"], c: 1 }
+    ];
+
+    function startQuiz() {
+        const name = document.getElementById('user-name').value;
+        const id = document.getElementById('user-id').value;
+        const phone = document.getElementById('user-phone').value;
+
+        if (!name || !id || !phone) {
+            alert("Vui lòng nhập đầy đủ thông tin cá nhân!");
+            return;
+        }
+
+        document.getElementById('step-1').classList.remove('active');
+        document.getElementById('step-2').classList.add('active');
+
+        const form = document.getElementById('quiz-form');
+        questions.forEach((q, index) => {
+            let optionsHtml = '';
+            q.a.forEach((opt, optIndex) => {
+                optionsHtml += `
+                    <label>
+                        <input type="radio" name="q${index}" value="${optIndex}"> ${opt}
+                    </label>
+                `;
+            });
+            form.innerHTML += `
+                <div class="question">
+                    <p><strong>Câu ${index + 1}:</strong> ${q.q}</p>
+                    <div class="options">${optionsHtml}</div>
+                </div>
+            `;
+        });
+    }
+
+    function submitQuiz() {
+        let score = 0;
+        questions.forEach((q, index) => {
+            const selected = document.querySelector(`input[name="q${index}"]:checked`);
+            if (selected && parseInt(selected.value) === q.c) {
+                score++;
+            }
+        });
+
+        document.getElementById('step-2').classList.remove('active');
+        document.getElementById('step-3').classList.add('active');
+
+        // Điền thông tin vào giấy chứng nhận
+        document.getElementById('res-name').innerText = document.getElementById('user-name').value.toUpperCase();
+        document.getElementById('res-id').innerText = document.getElementById('user-id').value;
+        document.getElementById('res-phone').innerText = document.getElementById('user-phone').value;
+        document.getElementById('res-score').innerText = score;
+        document.getElementById('res-date').innerText = new Date().toLocaleDateString('vi-VN');
+
+        const statusLabel = document.getElementById('res-status');
+        if (score >= 11) { // Trên 70% (khoảng 11 câu) đạt yêu cầu 
+            statusLabel.innerText = "KẾT QUẢ: ĐẠT YÊU CẦU";
+            statusLabel.style.color = "green";
+        } else {
+            statusLabel.innerText = "KẾT QUẢ: CHƯA ĐẠT (Yêu cầu làm lại)";
+            statusLabel.style.color = "red";
+        }
+    }
+</script>
+
+</body>
+</html><!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiểm tra An toàn Điện 110kV - Version 1.0</title>
+    <style>
+        :root {
+            --primary-color: #003366;
+            --accent-color: #ffcc00;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            text-align: center;
+            color: var(--primary-color);
+        }
+        .section {
+            display: none;
+        }
+        .active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        input[type="text"], input[type="tel"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .question {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+        }
+        .options label {
+            font-weight: normal;
+            display: block;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #002244;
+        }
+        /* Style cho Giấy chứng nhận */
+        #certificate {
+            border: 10px double var(--primary-color);
+            padding: 40px;
+            text-align: center;
+            background: #fff;
+            position: relative;
+        }
+        .cert-header {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #d4af37;
+        }
+        .cert-content {
+            margin: 20px 0;
+        }
+        .stamp {
+            margin-top: 30px;
+            text-align: right;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="step-1" class="section active">
+        <h1>THÔNG TIN NGƯỜI KIỂM TRA</h1>
+        <p style="text-align: center;">Vui lòng nhập đầy đủ thông tin trước khi bắt đầu bài kiểm tra an toàn điện.</p>
+        <div class="form-group">
+            <label>Họ và Tên:</label>
+            <input type="text" id="user-name" placeholder="Nguyễn Văn A" required>
+        </div>
+        <div class="form-group">
+            <label>Số CCCD:</label>
+            <input type="text" id="user-id" placeholder="079xxxxxxxx" required>
+        </div>
+        <div class="form-group">
+            <label>Số điện thoại:</label>
+            <input type="tel" id="user-phone" placeholder="09xxxxxxxx" required>
+        </div>
+        <button onclick="startQuiz()">Bắt đầu bài kiểm tra</button>
+    </div>
+
+    <div id="step-2" class="section">
+        <h2 id="quiz-title">CÂU HỎI KIỂM TRA KIẾN THỨC</h2>
+        <form id="quiz-form"></form>
+        <button onclick="submitQuiz()">Nộp bài</button>
+    </div>
+
+    <div id="step-3" class="section">
+        <div id="certificate">
+            <div class="cert-header">GIẤY CHỨNG NHẬN HOÀN THÀNH</div>
+            <div class="cert-content">
+                <p>Chứng nhận ông/bà:</p>
+                <h3 id="res-name">---</h3>
+                <p>Số CCCD: <span id="res-id">---</span> | SĐT: <span id="res-phone">---</span></p>
+                <p>Đã tham gia kiểm tra kiến thức an toàn khi thi công gần hành lang bảo vệ an toàn lưới điện cao áp 110kV.</p>
+                <hr>
+                <p style="font-size: 1.2em;">Kết quả: <strong id="res-score">0</strong>/15 câu</p>
+                <p id="res-status" style="font-weight: bold;"></p>
+            </div>
+            <div class="stamp">
+                <p>Ngày thực hiện: <span id="res-date"></span></p>
+                <p>Hệ thống quản lý an toàn Công ty LĐCT</p>
+            </div>
+        </div>
+        <button onclick="window.print()" style="margin-top: 20px; background: #28a745;">In kết quả</button>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        { q: "Trước khi thi công khu vực trong và gần hành lang an toàn lưới điện, đơn vị thi công phải làm gì? [cite: 25]", a: ["Tự ý thi công", "Lập phương án và biện pháp an toàn gửi đến Công ty LĐCT để thỏa hiệp", "Chỉ cần báo qua điện thoại", "Không cần làm gì"], c: 1 },
+        { q: "Người lao động làm việc tại công trường phải đạt bao nhiêu điểm trong bài kiểm tra kiến thức an toàn? ", a: ["5 điểm", "6 điểm", "Từ 7 điểm trở lên", "10 điểm"], c: 2 },
+        { q: "Hệ thống camera giám sát công trình bắt buộc phải có thiết bị gì để nhắc nhở? [cite: 29]", a: ["Đèn tín hiệu", "Loa phóng thanh", "Còi báo động", "Màn hình tivi"], c: 1 },
+        { q: "Các yêu cầu cắt điện đường dây 110kV phải được đăng ký trước bao nhiêu ngày? [cite: 31]", a: ["7 ngày", "15 ngày", "30 ngày", "60 ngày"], c: 2 },
+        { q: "Khoảng cách an toàn tối thiểu theo quy định khi thi công (không cắt điện) là bao nhiêu mét? [cite: 36]", a: ["1 mét", "2 mét", "3 mét", "5 mét"], c: 2 },
+        { q: "Biển cảnh báo an toàn phải được lắp đặt và dán tại đâu? [cite: 41]", a: ["Cổng công ty", "Cabin các phương tiện thi công cơ giới", "Cột điện cao thế", "Phòng bảo vệ"], c: 1 },
+        { q: "Khi phát hiện bất thường về lưới điện tại công trường, hành động đúng là? [cite: 44]", a: ["Tiếp tục làm việc", "Ngừng ngay việc thi công và thông báo cho Công ty LĐCT", "Tự ý sửa chữa", "Bỏ chạy"], c: 1 },
+        { q: "Giàn giáo và lưới che chắn thi công phải đảm bảo yêu cầu gì? [cite: 42]", a: ["Màu sắc đẹp", "Làm bằng gỗ", "Neo buộc chắc chắn không để ngã đổ vào đường dây", "Không cần che chắn"], c: 2 },
+        { q: "Chi phí thực hiện các biện pháp kỹ thuật đảm bảo an toàn do ai chịu trách nhiệm? [cite: 37]", a: ["Đơn vị điện lực", "Nhà nước", "Chủ đầu tư và đơn vị thi công", "Cả 3 bên"], c: 2 },
+        { q: "Đối với phương tiện hoạt động ngoài hành lang, cần bố trí ai để giám sát? [cite: 38]", a: ["Bảo vệ", "Người giám sát cảnh giới", "Kế toán", "Không cần ai"], c: 1 },
+        { q: "Hành vi nào bị cấm trong hành lang an toàn cáp điện? [cite: 39]", a: ["Đốt lửa, xếp chất dễ cháy nổ", "Trồng cỏ", "Đi bộ", "Lắp đèn chiếu sáng"], c: 0 },
+        { q: "Sau khi thi công hoàn tất, đơn vị thi công phải báo cho ai để kiểm tra? [cite: 49]", a: ["UBND Phường", "Chủ đầu tư và đơn vị vận hành lưới điện", "Công an", "Hàng xóm"], c: 1 },
+        { q: "Độ cao tối đa của nhà dự kiến xây dựng trong hành lang an toàn tại địa chỉ số 453 là? [cite: 22]", a: ["11.0 mét", "15.0 mét", "25.0 mét", "30.0 mét"], c: 0 },
+        { q: "Nếu phát hiện khoảng cách công trình không đúng thỏa thuận, chủ đầu tư phải? [cite: 47]", a: ["Nộp phạt", "Tháo dỡ ngay", "Giữ nguyên hiện trạng", "Xin giấy phép mới"], c: 1 },
+        { q: "Thời gian thực hiện thỏa thuận này kéo dài đến ngày nào? [cite: 55]", a: ["30/12/2025", "30/12/2026", "01/01/2026", "Hết năm 2027"], c: 1 }
+    ];
+
+    function startQuiz() {
+        const name = document.getElementById('user-name').value;
+        const id = document.getElementById('user-id').value;
+        const phone = document.getElementById('user-phone').value;
+
+        if (!name || !id || !phone) {
+            alert("Vui lòng nhập đầy đủ thông tin cá nhân!");
+            return;
+        }
+
+        document.getElementById('step-1').classList.remove('active');
+        document.getElementById('step-2').classList.add('active');
+
+        const form = document.getElementById('quiz-form');
+        questions.forEach((q, index) => {
+            let optionsHtml = '';
+            q.a.forEach((opt, optIndex) => {
+                optionsHtml += `
+                    <label>
+                        <input type="radio" name="q${index}" value="${optIndex}"> ${opt}
+                    </label>
+                `;
+            });
+            form.innerHTML += `
+                <div class="question">
+                    <p><strong>Câu ${index + 1}:</strong> ${q.q}</p>
+                    <div class="options">${optionsHtml}</div>
+                </div>
+            `;
+        });
+    }
+
+    function submitQuiz() {
+        let score = 0;
+        questions.forEach((q, index) => {
+            const selected = document.querySelector(`input[name="q${index}"]:checked`);
+            if (selected && parseInt(selected.value) === q.c) {
+                score++;
+            }
+        });
+
+        document.getElementById('step-2').classList.remove('active');
+        document.getElementById('step-3').classList.add('active');
+
+        // Điền thông tin vào giấy chứng nhận
+        document.getElementById('res-name').innerText = document.getElementById('user-name').value.toUpperCase();
+        document.getElementById('res-id').innerText = document.getElementById('user-id').value;
+        document.getElementById('res-phone').innerText = document.getElementById('user-phone').value;
+        document.getElementById('res-score').innerText = score;
+        document.getElementById('res-date').innerText = new Date().toLocaleDateString('vi-VN');
+
+        const statusLabel = document.getElementById('res-status');
+        if (score >= 11) { // Trên 70% (khoảng 11 câu) đạt yêu cầu 
+            statusLabel.innerText = "KẾT QUẢ: ĐẠT YÊU CẦU";
+            statusLabel.style.color = "green";
+        } else {
+            statusLabel.innerText = "KẾT QUẢ: CHƯA ĐẠT (Yêu cầu làm lại)";
+            statusLabel.style.color = "red";
+        }
+    }
+</script>
+
+</body>
+</html>
