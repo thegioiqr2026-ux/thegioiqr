@@ -2,103 +2,225 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Panel | TheGioiQR.com</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel | Thế Giới QR</title>
+    
+    <link rel="icon" type="image/jpeg" href="logo_Group.jpg">
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f0f2f5; }
-        .card { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { border-bottom: 1px solid #ddd; padding: 10px; text-align: left; }
-        .btn { padding: 5px 10px; cursor: pointer; border-radius: 4px; border: none; color: #fff; }
-        .btn-lock { background: #e74c3c; }
-        .btn-unlock { background: #27ae60; }
-        .btn-save { background: #2c3e50; padding: 10px 20px; }
-        input { padding: 8px; margin-right: 10px; border: 1px solid #ddd; }
+        :root { --primary: #27ae60; --dark: #2c3e50; --danger: #e74c3c; --sidebar-width: 260px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background: #f4f7f6; display: flex; min-height: 100vh; }
+
+        /* SIDEBAR ADMIN */
+        #sidebar { width: var(--sidebar-width); background: var(--dark); color: white; position: fixed; height: 100%; transition: 0.3s; z-index: 1000; }
+        .sidebar-header { padding: 30px 20px; text-align: center; border-bottom: 1px solid #34495e; }
+        .sidebar-header img { width: 70px; height: 70px; border-radius: 50%; border: 2px solid var(--primary); margin-bottom: 10px; }
+        .nav-link { padding: 15px 25px; display: block; color: #bdc3c7; text-decoration: none; cursor: pointer; transition: 0.3s; }
+        .nav-link:hover, .nav-link.active { background: #34495e; color: white; border-left: 5px solid var(--primary); }
+
+        /* MAIN CONTENT */
+        #main-content { margin-left: var(--sidebar-width); flex: 1; padding: 30px; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        
+        h2 { color: var(--dark); margin-bottom: 20px; font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
+        input { padding: 12px; border: 1.5px solid #eee; border-radius: 8px; outline: none; margin-right: 10px; width: 120px; }
+        
+        /* TABLE ADMIN */
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        th { background: #fafafa; color: #7f8c8d; font-size: 12px; text-transform: uppercase; }
+        
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+        .status-active { background: #e8f5e9; color: #27ae60; }
+        .status-locked { background: #ffebee; color: #e74c3c; }
+
+        .btn { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; font-size: 12px; transition: 0.3s; }
+        .btn-save { background: var(--primary); color: white; padding: 12px 25px; }
+        .btn-lock { background: #fdf2f2; color: var(--danger); border: 1px solid #facccc; }
+        .btn-unlock { background: #f0fdf4; color: var(--primary); border: 1px solid #bbf7d0; }
+        
+        .hidden { display: none !important; }
+        #loading-overlay { position: fixed; inset: 0; background: var(--dark); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
+
+        @media (max-width: 768px) {
+            #sidebar { transform: translateX(-100%); }
+            #main-content { margin-left: 0; padding: 15px; }
+        }
     </style>
 </head>
 <body>
-    <h1>Quản trị Hệ thống TheGioiQR</h1>
 
-    <div class="card">
-        <h3>Cấu hình giới hạn toàn hệ thống</h3>
-        Giới hạn/Ngày: <input type="number" id="limit-day">
-        Giới hạn/Phút: <input type="number" id="limit-min">
-        <button class="btn btn-save" onclick="saveConfig()">LƯU CẤU HÌNH</button>
+    <div id="loading-overlay">
+        <img src="logo_Group.jpg" style="width:80px; border-radius:50%; margin-bottom:20px;">
+        <div style="font-size: 18px;">Đang kiểm tra quyền Admin...</div>
     </div>
 
-    <div class="card">
-        <h3>Danh sách người dùng</h3>
-        <table id="user-table">
-            <thead><tr><th>Tên/Email</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
-            <tbody></tbody>
-        </table>
+    <div id="sidebar">
+        <div class="sidebar-header">
+            <img src="logo_Group.jpg">
+            <h3>ADMIN PANEL</h3>
+            <small style="color:var(--primary)">Mr. An Toàn</small>
+        </div>
+        <div class="nav-link active" onclick="showSection('config')"><i class="fas fa-cogs"></i> Cấu hình hệ thống</div>
+        <div class="nav-link" onclick="showSection('users')"><i class="fas fa-users"></i> Quản lý người dùng</div>
+        <div class="nav-link" onclick="showSection('qrs')"><i class="fas fa-qrcode"></i> Kiểm soát nội dung</div>
+        <div class="nav-link" onclick="window.location.href='index.html'" style="margin-top: 50px; color: #ff7675;"><i class="fas fa-arrow-left"></i> Về trang chủ</div>
     </div>
 
-    <div class="card">
-        <h3>Tất cả mã QR (Kiểm tra nội dung)</h3>
-        <table id="qr-table">
-            <thead><tr><th>Người tạo</th><th>Tiêu đề</th><th>Link gốc</th><th>Hành động</th></tr></thead>
-            <tbody></tbody>
-        </table>
+    <div id="main-content">
+        <div id="section-config" class="admin-section">
+            <div class="card">
+                <h2><i class="fas fa-tools" style="color:var(--primary)"></i> Giới hạn tài nguyên</h2>
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <div>
+                        <small style="display:block; margin-bottom:5px; color:#666;">Số mã tối đa/Ngày</small>
+                        <input type="number" id="limit-day">
+                    </div>
+                    <div>
+                        <small style="display:block; margin-bottom:5px; color:#666;">Số mã tối đa/Phút</small>
+                        <input type="number" id="limit-min">
+                    </div>
+                    <button class="btn btn-save" onclick="saveConfig()">LƯU CẤU HÌNH</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-users" class="admin-section hidden">
+            <div class="card">
+                <h2><i class="fas fa-user-shield" style="color:var(--primary)"></i> Danh sách học viên & Giảng viên</h2>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Thông tin</th>
+                                <th>Trạng thái</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-qrs" class="admin-section hidden">
+            <div class="card">
+                <h2><i class="fas fa-eye" style="color:var(--primary)"></i> Giám sát nội dung mã QR</h2>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Người tạo</th>
+                                <th>Tiêu đề & Link đích</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="qr-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
 <script>
-    const firebaseConfig = { /* Dán Config của bạn vào đây */ };
+    // --- FIREBASE CONFIG (Dùng chung với index) ---
+    const firebaseConfig = { 
+        apiKey: "AIzaSyCjZfDgE4JFRilXh5dCtrTFLA3-BlerRNE", 
+        authDomain: "thegioiqr-2026.firebaseapp.com", 
+        projectId: "thegioiqr-2026", 
+        storageBucket: "thegioiqr-2026.firebasestorage.app", 
+        messagingSenderId: "911702916265", 
+        appId: "1:911702916265:web:d42d948ebb7e7a53dcbdb8" 
+    };
     firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // Tải cấu hình
-    db.collection('settings').doc('global_config').onSnapshot(doc => {
-        const data = doc.data();
-        document.getElementById('limit-day').value = data.limit_per_day;
-        document.getElementById('limit-min').value = data.limit_per_min;
+    // --- KIỂM TRA QUYỀN TRUY CẬP ---
+    auth.onAuthStateChanged(user => {
+        if (user && user.email === "thegioiqr2026@gmail.com") {
+            document.getElementById('loading-overlay').classList.add('hidden');
+            loadInitialData();
+        } else {
+            alert("⚠️ Truy cập bị từ chối! Trang này chỉ dành cho Mr. An Toàn.");
+            window.location.href = "index.html";
+        }
     });
+
+    function showSection(name) {
+        document.querySelectorAll('.admin-section').forEach(s => s.classList.add('hidden'));
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        document.getElementById('section-' + name).classList.remove('hidden');
+        event.currentTarget.classList.add('active');
+        if(name === 'users') loadUsers();
+        if(name === 'qrs') loadQRs();
+    }
+
+    // --- LOGIC HỆ THỐNG ---
+    function loadInitialData() {
+        db.collection('settings').doc('global_config').onSnapshot(doc => {
+            if(doc.exists) {
+                document.getElementById('limit-day').value = doc.data().limit_per_day;
+                document.getElementById('limit-min').value = doc.data().limit_per_min;
+            }
+        });
+    }
 
     async function saveConfig() {
         const d = parseInt(document.getElementById('limit-day').value);
         const m = parseInt(document.getElementById('limit-min').value);
-        await db.collection('settings').doc('global_config').update({ limit_per_day: d, limit_per_min: m });
-        alert("Đã cập nhật giới hạn!");
+        await db.collection('settings').doc('global_config').set({ limit_per_day: d, limit_per_min: m });
+        alert("✨ Đã cập nhật giới hạn toàn hệ thống!");
     }
 
-    // Tải User
-    db.collection('users').onSnapshot(snap => {
-        const tbody = document.querySelector('#user-table tbody');
-        tbody.innerHTML = "";
-        snap.forEach(doc => {
-            const u = doc.data();
-            const btnClass = u.status === 'locked' ? 'btn-unlock' : 'btn-lock';
-            const btnText = u.status === 'locked' ? 'Mở khóa' : 'Khóa TK';
-            const newStatus = u.status === 'locked' ? 'active' : 'locked';
-            
-            tbody.innerHTML += `<tr>
-                <td>${u.name}<br><small>${u.email}</small></td>
-                <td><b>${u.status}</b></td>
-                <td><button class="btn ${btnClass}" onclick="updateStatus('${doc.id}', '${newStatus}')">${btnText}</button></td>
-            </tr>`;
+    function loadUsers() {
+        db.collection('users').onSnapshot(snap => {
+            const body = document.getElementById('user-table-body');
+            body.innerHTML = "";
+            snap.forEach(doc => {
+                const u = doc.data();
+                const isLocked = u.status === 'locked';
+                body.innerHTML += `<tr>
+                    <td><b>${u.name}</b><br><small>${u.email}</small></td>
+                    <td><span class="status-badge ${isLocked ? 'status-locked' : 'status-active'}">${u.status || 'active'}</span></td>
+                    <td>
+                        <button class="btn ${isLocked ? 'btn-unlock' : 'btn-lock'}" onclick="toggleUser('${doc.id}', '${isLocked ? 'active' : 'locked'}')">
+                            ${isLocked ? 'Mở khóa' : 'Khóa TK'}
+                        </button>
+                    </td>
+                </tr>`;
+            });
         });
-    });
+    }
 
-    async function updateStatus(id, s) { await db.collection('users').doc(id).update({ status: s }); }
+    async function toggleUser(id, newStatus) {
+        await db.collection('users').doc(id).update({ status: newStatus });
+    }
 
-    // Tải QR (Kiểm soát nội dung)
-    db.collection('qrcodes').orderBy('date', 'desc').limit(50).onSnapshot(snap => {
-        const tbody = document.querySelector('#qr-table tbody');
-        tbody.innerHTML = "";
-        snap.forEach(doc => {
-            const qr = doc.data();
-            tbody.innerHTML += `<tr>
-                <td>${qr.uid}</td>
-                <td>${qr.title}</td>
-                <td style="word-break:break-all">${qr.url}</td>
-                <td><button class="btn btn-lock" onclick="deleteQR('${doc.id}')">Xóa vi phạm</button></td>
-            </tr>`;
+    function loadQRs() {
+        db.collection('qrcodes').orderBy('date', 'desc').limit(50).onSnapshot(snap => {
+            const body = document.getElementById('qr-table-body');
+            body.innerHTML = "";
+            snap.forEach(doc => {
+                const q = doc.data();
+                body.innerHTML += `<tr>
+                    <td><small>${q.uid}</small></td>
+                    <td><b>${q.title}</b><br><small style="color:var(--primary); word-break:break-all;">${q.url}</small></td>
+                    <td><button class="btn btn-lock" onclick="deleteQR('${doc.id}')"><i class="fas fa-trash"></i> Xóa</button></td>
+                </tr>`;
+            });
         });
-    });
+    }
 
-    async function deleteQR(id) { if(confirm("Xóa mã vi phạm?")) await db.collection('qrcodes').doc(id).delete(); }
+    async function deleteQR(id) {
+        if(confirm("Xóa mã QR vi phạm này?")) await db.collection('qrcodes').doc(id).delete();
+    }
 </script>
 </body>
 </html>
