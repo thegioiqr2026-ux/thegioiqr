@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel | Thế Giới QR</title>
+    <title>Quản Trị Tối Cao | Thế Giới QR</title>
     
     <link rel="icon" type="image/jpeg" href="logo_Group.jpg">
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -14,114 +14,87 @@
     <style>
         :root { --primary: #27ae60; --dark: #2c3e50; --danger: #e74c3c; --sidebar-width: 260px; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background: #f4f7f6; display: flex; min-height: 100vh; }
+        body { background: #f4f7f6; display: flex; min-height: 100vh; flex-direction: column; }
 
-        /* SIDEBAR ADMIN */
-        #sidebar { width: var(--sidebar-width); background: var(--dark); color: white; position: fixed; height: 100%; transition: 0.3s; z-index: 1000; }
+        /* LOGIN ADMIN CARD */
+        #admin-login-view { 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            height: 100vh; background: var(--dark); color: white; padding: 20px;
+        }
+        .admin-card { 
+            background: white; padding: 40px; border-radius: 20px; width: 100%; max-width: 400px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2); color: var(--dark);
+        }
+        .admin-card img { width: 80px; border-radius: 50%; border: 3px solid var(--primary); margin-bottom: 20px; }
+        
+        input { width: 100%; padding: 14px; margin: 10px 0; border: 1.5px solid #eee; border-radius: 10px; outline: none; }
+        input:focus { border-color: var(--primary); }
+        .btn-admin-login { background: var(--primary); color: white; width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px; }
+
+        /* SIDEBAR & CONTENT (Chỉ hiện sau khi Login đúng mail) */
+        #admin-dashboard { display: none; width: 100%; min-height: 100vh; }
+        #sidebar { width: var(--sidebar-width); background: var(--dark); color: white; position: fixed; height: 100%; z-index: 1000; }
         .sidebar-header { padding: 30px 20px; text-align: center; border-bottom: 1px solid #34495e; }
-        .sidebar-header img { width: 70px; height: 70px; border-radius: 50%; border: 2px solid var(--primary); margin-bottom: 10px; }
-        .nav-link { padding: 15px 25px; display: block; color: #bdc3c7; text-decoration: none; cursor: pointer; transition: 0.3s; }
-        .nav-link:hover, .nav-link.active { background: #34495e; color: white; border-left: 5px solid var(--primary); }
+        .nav-link { padding: 15px 25px; display: block; color: #bdc3c7; text-decoration: none; cursor: pointer; }
+        .nav-link.active { background: #34495e; color: white; border-left: 5px solid var(--primary); }
 
-        /* MAIN CONTENT */
         #main-content { margin-left: var(--sidebar-width); flex: 1; padding: 30px; }
         .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 30px; }
         
-        h2 { color: var(--dark); margin-bottom: 20px; font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
-        input { padding: 12px; border: 1.5px solid #eee; border-radius: 8px; outline: none; margin-right: 10px; width: 120px; }
-        
-        /* TABLE ADMIN */
-        .table-wrapper { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
-        th { background: #fafafa; color: #7f8c8d; font-size: 12px; text-transform: uppercase; }
-        
-        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
-        .status-active { background: #e8f5e9; color: #27ae60; }
-        .status-locked { background: #ffebee; color: #e74c3c; }
-
-        .btn { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; font-size: 12px; transition: 0.3s; }
-        .btn-save { background: var(--primary); color: white; padding: 12px 25px; }
-        .btn-lock { background: #fdf2f2; color: var(--danger); border: 1px solid #facccc; }
-        .btn-unlock { background: #f0fdf4; color: var(--primary); border: 1px solid #bbf7d0; }
-        
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #f0f0f0; }
         .hidden { display: none !important; }
-        #loading-overlay { position: fixed; inset: 0; background: var(--dark); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
 
         @media (max-width: 768px) {
-            #sidebar { transform: translateX(-100%); }
+            #sidebar { display: none; }
             #main-content { margin-left: 0; padding: 15px; }
         }
     </style>
 </head>
 <body>
 
-    <div id="loading-overlay">
-        <img src="logo_Group.jpg" style="width:80px; border-radius:50%; margin-bottom:20px;">
-        <div style="font-size: 18px;">Đang kiểm tra quyền Admin...</div>
+    <div id="admin-login-view">
+        <div class="admin-card">
+            <div style="text-align: center;">
+                <img src="logo_Group.jpg" alt="Logo">
+                <h2 style="margin-bottom: 5px;">Hệ Thống Quản Trị</h2>
+                <p style="color: #888; font-size: 13px; margin-bottom: 20px;">Xác thực quyền hạn Mr. An Toàn</p>
+            </div>
+            <input type="email" id="admin-email" placeholder="Email Admin">
+            <input type="password" id="admin-pass" placeholder="Mật khẩu Admin">
+            <button class="btn-admin-login" onclick="handleAdminLogin()">VÀO HỆ THỐNG <i class="fas fa-shield-alt"></i></button>
+            <p style="text-align: center; margin-top: 15px; font-size: 12px; color: #999;">Trang này chỉ dành cho người vận hành thegioiqr.com</p>
+        </div>
     </div>
 
-    <div id="sidebar">
-        <div class="sidebar-header">
-            <img src="logo_Group.jpg">
-            <h3>ADMIN PANEL</h3>
-            <small style="color:var(--primary)">Mr. An Toàn</small>
+    <div id="admin-dashboard">
+        <div id="sidebar">
+            <div class="sidebar-header">
+                <img src="logo_Group.jpg" style="width: 60px; border-radius: 50%;">
+                <h3 style="margin-top: 10px;">VDC ADMIN</h3>
+            </div>
+            <div class="nav-link active" onclick="showSec('config')"><i class="fas fa-cog"></i> Cấu hình</div>
+            <div class="nav-link" onclick="showSec('users')"><i class="fas fa-users"></i> Người dùng</div>
+            <div class="nav-link" onclick="logoutAdmin()" style="color: #ff7675; margin-top: 50px;"><i class="fas fa-power-off"></i> Thoát Admin</div>
         </div>
-        <div class="nav-link active" onclick="showSection('config')"><i class="fas fa-cogs"></i> Cấu hình hệ thống</div>
-        <div class="nav-link" onclick="showSection('users')"><i class="fas fa-users"></i> Quản lý người dùng</div>
-        <div class="nav-link" onclick="showSection('qrs')"><i class="fas fa-qrcode"></i> Kiểm soát nội dung</div>
-        <div class="nav-link" onclick="window.location.href='index.html'" style="margin-top: 50px; color: #ff7675;"><i class="fas fa-arrow-left"></i> Về trang chủ</div>
-    </div>
 
-    <div id="main-content">
-        <div id="section-config" class="admin-section">
-            <div class="card">
-                <h2><i class="fas fa-tools" style="color:var(--primary)"></i> Giới hạn tài nguyên</h2>
-                <div style="display: flex; align-items: center; gap: 20px;">
-                    <div>
-                        <small style="display:block; margin-bottom:5px; color:#666;">Số mã tối đa/Ngày</small>
-                        <input type="number" id="limit-day">
-                    </div>
-                    <div>
-                        <small style="display:block; margin-bottom:5px; color:#666;">Số mã tối đa/Phút</small>
-                        <input type="number" id="limit-min">
-                    </div>
-                    <button class="btn btn-save" onclick="saveConfig()">LƯU CẤU HÌNH</button>
+        <div id="main-content">
+            <div id="sec-config" class="admin-sec">
+                <div class="card">
+                    <h2>Thiết lập giới hạn</h2>
+                    <p style="margin-bottom: 15px; font-size: 14px; color: #666;">Số lượng mã QR tối đa người dùng được tạo.</p>
+                    Ngày: <input type="number" id="l-day" style="width: 80px;"> 
+                    Phút: <input type="number" id="l-min" style="width: 80px;">
+                    <button onclick="saveLimit()" style="background: var(--primary); color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer;">Lưu</button>
                 </div>
             </div>
-        </div>
 
-        <div id="section-users" class="admin-section hidden">
-            <div class="card">
-                <h2><i class="fas fa-user-shield" style="color:var(--primary)"></i> Danh sách học viên & Giảng viên</h2>
-                <div class="table-wrapper">
+            <div id="sec-users" class="admin-sec hidden">
+                <div class="card">
+                    <h2>Danh sách người dùng</h2>
                     <table>
-                        <thead>
-                            <tr>
-                                <th>Thông tin</th>
-                                <th>Trạng thái</th>
-                                <th>Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody id="user-table-body"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div id="section-qrs" class="admin-section hidden">
-            <div class="card">
-                <h2><i class="fas fa-eye" style="color:var(--primary)"></i> Giám sát nội dung mã QR</h2>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Người tạo</th>
-                                <th>Tiêu đề & Link đích</th>
-                                <th>Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody id="qr-table-body"></tbody>
+                        <thead><tr><th>Tên/Email</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
+                        <tbody id="user-list"></tbody>
                     </table>
                 </div>
             </div>
@@ -129,7 +102,6 @@
     </div>
 
 <script>
-    // --- FIREBASE CONFIG (Dùng chung với index) ---
     const firebaseConfig = { 
         apiKey: "AIzaSyCjZfDgE4JFRilXh5dCtrTFLA3-BlerRNE", 
         authDomain: "thegioiqr-2026.firebaseapp.com", 
@@ -142,85 +114,89 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // --- KIỂM TRA QUYỀN TRUY CẬP ---
-    auth.onAuthStateChanged(user => {
-        if (user && user.email === "thegioiqr2026@gmail.com") {
-            document.getElementById('loading-overlay').classList.add('hidden');
-            loadInitialData();
-        } else {
-            alert("⚠️ Truy cập bị từ chối! Trang này chỉ dành cho Mr. An Toàn.");
+    const ADMIN_EMAIL = "thegioiqr2026@gmail.com";
+
+    // --- HÀM ĐĂNG NHẬP ADMIN ---
+    async function handleAdminLogin() {
+        const email = document.getElementById('admin-email').value;
+        const pass = document.getElementById('admin-pass').value;
+
+        if (email !== ADMIN_EMAIL) {
+            alert("❌ Bạn không có quyền truy cập trang này!");
             window.location.href = "index.html";
+            return;
+        }
+
+        try {
+            await auth.signInWithEmailAndPassword(email, pass);
+            // Sau khi signIn thành công, auth.onAuthStateChanged sẽ tự xử lý hiện Dashboard
+        } catch (e) {
+            alert("Mật khẩu Admin không chính xác!");
+        }
+    }
+
+    // --- KIỂM SOÁT TRẠNG THÁI ---
+    auth.onAuthStateChanged(user => {
+        if (user && user.email === ADMIN_EMAIL) {
+            document.getElementById('admin-login-view').style.display = 'none';
+            document.getElementById('admin-dashboard').style.display = 'flex';
+            loadData();
+        } else {
+            document.getElementById('admin-login-view').style.display = 'flex';
+            document.getElementById('admin-dashboard').style.display = 'none';
+            // Nếu là user thường cố tình vào link admin, đá về index
+            if(user && user.email !== ADMIN_EMAIL) {
+                alert("Khu vực cấm!");
+                auth.signOut();
+                window.location.href = "index.html";
+            }
         }
     });
 
-    function showSection(name) {
-        document.querySelectorAll('.admin-section').forEach(s => s.classList.add('hidden'));
+    function showSec(id) {
+        document.querySelectorAll('.admin-sec').forEach(s => s.classList.add('hidden'));
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        document.getElementById('section-' + name).classList.remove('hidden');
+        document.getElementById('sec-' + id).classList.remove('hidden');
         event.currentTarget.classList.add('active');
-        if(name === 'users') loadUsers();
-        if(name === 'qrs') loadQRs();
+        if(id === 'users') loadUsers();
     }
 
-    // --- LOGIC HỆ THỐNG ---
-    function loadInitialData() {
-        db.collection('settings').doc('global_config').onSnapshot(doc => {
-            if(doc.exists) {
-                document.getElementById('limit-day').value = doc.data().limit_per_day;
-                document.getElementById('limit-min').value = doc.data().limit_per_min;
-            }
-        });
+    async function loadData() {
+        const doc = await db.collection('settings').doc('global_config').get();
+        if(doc.exists) {
+            document.getElementById('l-day').value = doc.data().limit_per_day;
+            document.getElementById('l-min').value = doc.data().limit_per_min;
+        }
     }
 
-    async function saveConfig() {
-        const d = parseInt(document.getElementById('limit-day').value);
-        const m = parseInt(document.getElementById('limit-min').value);
+    async function saveLimit() {
+        const d = parseInt(document.getElementById('l-day').value);
+        const m = parseInt(document.getElementById('l-min').value);
         await db.collection('settings').doc('global_config').set({ limit_per_day: d, limit_per_min: m });
-        alert("✨ Đã cập nhật giới hạn toàn hệ thống!");
+        alert("Đã lưu giới hạn mới!");
     }
 
     function loadUsers() {
         db.collection('users').onSnapshot(snap => {
-            const body = document.getElementById('user-table-body');
+            const body = document.getElementById('user-list');
             body.innerHTML = "";
             snap.forEach(doc => {
                 const u = doc.data();
-                const isLocked = u.status === 'locked';
                 body.innerHTML += `<tr>
-                    <td><b>${u.name}</b><br><small>${u.email}</small></td>
-                    <td><span class="status-badge ${isLocked ? 'status-locked' : 'status-active'}">${u.status || 'active'}</span></td>
-                    <td>
-                        <button class="btn ${isLocked ? 'btn-unlock' : 'btn-lock'}" onclick="toggleUser('${doc.id}', '${isLocked ? 'active' : 'locked'}')">
-                            ${isLocked ? 'Mở khóa' : 'Khóa TK'}
-                        </button>
-                    </td>
+                    <td>${u.name}<br><small>${u.email}</small></td>
+                    <td>${u.status || 'active'}</td>
+                    <td><button onclick="toggleUser('${doc.id}', '${u.status === 'locked' ? 'active' : 'locked'}')" 
+                        style="cursor:pointer; padding:5px; background:${u.status === 'locked' ? '#27ae60' : '#e74c3c'}; color:white; border:none; border-radius:5px;">
+                        ${u.status === 'locked' ? 'Mở' : 'Khóa'}
+                    </button></td>
                 </tr>`;
             });
         });
     }
 
-    async function toggleUser(id, newStatus) {
-        await db.collection('users').doc(id).update({ status: newStatus });
-    }
+    async function toggleUser(id, st) { await db.collection('users').doc(id).update({ status: st }); }
 
-    function loadQRs() {
-        db.collection('qrcodes').orderBy('date', 'desc').limit(50).onSnapshot(snap => {
-            const body = document.getElementById('qr-table-body');
-            body.innerHTML = "";
-            snap.forEach(doc => {
-                const q = doc.data();
-                body.innerHTML += `<tr>
-                    <td><small>${q.uid}</small></td>
-                    <td><b>${q.title}</b><br><small style="color:var(--primary); word-break:break-all;">${q.url}</small></td>
-                    <td><button class="btn btn-lock" onclick="deleteQR('${doc.id}')"><i class="fas fa-trash"></i> Xóa</button></td>
-                </tr>`;
-            });
-        });
-    }
-
-    async function deleteQR(id) {
-        if(confirm("Xóa mã QR vi phạm này?")) await db.collection('qrcodes').doc(id).delete();
-    }
+    function logoutAdmin() { auth.signOut(); }
 </script>
 </body>
 </html>
