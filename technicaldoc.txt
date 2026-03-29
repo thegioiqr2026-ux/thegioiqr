@@ -1,0 +1,90 @@
+Chào bạn, để việc bảo trì và nâng cấp **thegioiqr.com** sau này trở nên dễ dàng (nhất là khi bạn muốn bàn giao hoặc mở rộng tính năng), tôi đã soạn thảo bản **Đặc tả kỹ thuật (Technical Specification)** chi tiết dựa trên mã nguồn **Version 1.1**.
+
+Đây là "bản đồ" để bạn hoặc bất kỳ kỹ thuật viên nào nhìn vào cũng có thể hiểu hệ thống đang chạy như thế nào.
+
+---
+
+# TÀI LIỆU KỸ THUẬT THEGIOIQR.COM (VERSION 1.1)
+
+## 1. TỔNG QUAN HỆ THỐNG
+* **Tên dự án:** thegioiqr.com
+* **Chức năng chính:** Tạo, quản lý, chỉnh sửa mã QR cá nhân cho khối HSE/HR.
+* **Nền tảng vận hành:** GitHub Pages (Frontend) & Firebase (Backend).
+* **Ngôn ngữ:** HTML5, CSS3, JavaScript (ES6).
+
+---
+
+## 2. KIẾN TRÚC DỮ LIỆU (FIREBASE FIRESTORE)
+Hệ thống sử dụng cơ sở dữ liệu NoSQL với cấu trúc như sau:
+
+| Collection | Document ID | Các trường thông tin (Fields) | Mục đích |
+| :--- | :--- | :--- | :--- |
+| **users** | `uid` (Auto) | `email`, `name`, `status` (active/locked) | Quản lý thông tin người dùng và quyền truy cập. |
+| **qrcodes** | `auto-id` | `uid`, `title`, `url`, `date` (Timestamp) | Lưu trữ thông tin các mã QR đã tạo. |
+| **settings** | `global_config` | `limit_per_day`, `limit_per_min` | Cấu hình giới hạn hệ thống (điều khiển từ admin). |
+
+---
+
+## 3. MÔ TẢ GIAO DIỆN (UI COMPONENTS)
+Giao diện được thiết kế theo phong cách **Dashboard Single Page Application (SPA)**:
+
+* **Sidebar (Bên trái):**
+    * Chứa Logo `logo_Group.jpg` và phiên bản hệ thống.
+    * Danh sách menu điều hướng (Tạo mã, Lịch sử, Hướng dẫn, Cài đặt).
+    * Cơ chế: Tự động ẩn trên Mobile, sử dụng class `.show` để kích hoạt.
+* **Main Content (Bên phải):**
+    * Chia thành các thẻ `<div class="page">`.
+    * Sử dụng hàm `showPage(id)` để chuyển đổi giữa các trang mà không cần tải lại trang.
+* **Responsive:** Sử dụng `@media (max-width: 768px)` để chuyển đổi giữa giao diện Desktop và Mobile.
+
+---
+
+## 4. LOGIC XỬ LÝ (FUNCTIONAL LOGIC)
+
+### 4.1. Xác thực người dùng (Authentication)
+* Sử dụng **Firebase Auth** để quản lý phiên đăng nhập.
+* `onAuthStateChanged`: Theo dõi trạng thái người dùng. Nếu chưa đăng nhập, ẩn toàn bộ Sidebar và hiện `auth-container`.
+
+### 4.2. Tạo và Lưu trữ mã QR
+* **Thư viện:** `qrcode.min.js`.
+* **Quy trình:**
+    1. Kiểm tra giới hạn (`checkLimits`) từ `settings/global_config`.
+    2. Nếu hợp lệ, vẽ mã QR vào thẻ `#qrcode`.
+    3. Lưu thông tin vào Firestore `qrcodes`.
+    4. Cập nhật lại danh sách lịch sử.
+
+### 4.3. Giới hạn tần suất (Rate Limiting)
+* Dữ liệu giới hạn được lấy động từ Firebase thay vì ghi cứng trong code.
+* Kiểm tra số lượng document trong `qrcodes` có cùng `uid` trong khoảng thời gian 1 phút và 1 ngày.
+
+### 4.4. Bảo mật mật khẩu
+* **Visibility:** Hàm `togglePass` chuyển đổi thuộc tính `type="password"` sang `type="text"`.
+* **Validation:** So sánh chuỗi giữa `new-pass` và `confirm-pass` trước khi gọi API `updatePassword`.
+
+---
+
+## 5. CÁC ĐIỂM CẦN LƯU Ý KHI BẢO TRÌ
+
+### 5.1. Quản lý Index (Chỉ mục)
+Khi thực hiện truy vấn phức tạp (Ví dụ: `where('uid')` kết hợp `orderBy('date')`), Firebase yêu cầu tạo Index.
+* **Dấu hiệu lỗi:** Bảng lịch sử không hiện dữ liệu, Console báo lỗi `FAILED_PRECONDITION`.
+* **Khắc phục:** Bấm vào đường link trong Console để Firebase tự động tạo Index.
+
+### 5.2. Cập nhật Logo
+* Logo chính là file `logo_Group.jpg`. Khi muốn thay logo mới, chỉ cần tải file cùng tên đè lên GitHub, không cần sửa code.
+
+### 5.3. Nâng cấp phiên bản
+* Tuân thủ quy tắc tăng **0.1** cho mỗi lần chỉnh sửa nhỏ.
+* Chỉ tăng lên **2.0** khi thay đổi hoàn toàn kiến trúc hoặc giao diện chính.
+
+---
+
+## 6. HƯỚNG DẪN TRIỂN KHAI (DEPLOY)
+1. Cập nhật file `index.html` lên Repository GitHub.
+2. Kiểm tra cài đặt **GitHub Pages** để đảm bảo trỏ đúng vào nhánh `main`.
+3. Kiểm tra **Firebase Config** (API Key, Project ID) đảm bảo không bị thay đổi.
+
+---
+*Tài liệu này được soạn thảo để đi kèm với **Version 1.1** của thegioiqr.com.*
+
+**Bạn có muốn tôi đóng gói tài liệu này thành một file `README.md` để bạn lưu trữ ngay trên GitHub cạnh file index không?** Điều này rất tốt cho việc quản lý mã nguồn chuyên nghiệp.
