@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thế Giới QR | Version 1.18</title>
+    <title>Thế Giới QR | Version 1.19</title>
     
     <link rel="icon" type="image/jpeg" href="logo_Group.jpg">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -78,7 +78,7 @@
             <i class="fas fa-times close-sidebar" onclick="toggleSidebar()"></i>
             <img src="logo_Group.jpg" alt="Logo">
             <h3>THEGIOI<span style="color:var(--primary)">QR</span></h3>
-            <small style="color:#666">Version 1.18</small>
+            <small style="color:#666">Version 1.19</small>
         </div>
         <div class="nav-link active" onclick="navToCreate()"><i class="fas fa-plus-circle"></i> Tạo Mã QR</div>
         <div class="nav-link" onclick="showPage('history-page')"><i class="fas fa-history"></i> Mã QR của tôi</div>
@@ -113,6 +113,31 @@
                             <a href="javascript:void(0)" onclick="switchAuth('forgot')" style="color:#888; text-decoration:none; font-size:14px;">Quên mật khẩu?</a>
                         </p>
                     </div>
+
+                    <div id="register-box" class="hidden">
+                        <h2 style="text-align: center; margin-bottom: 10px;">Đăng Ký Tài Khoản</h2>
+                        <div id="reg-step-1">
+                            <input type="text" id="reg-name" placeholder="Họ và tên">
+                            <input type="email" id="reg-email" placeholder="Email nhận OTP">
+                            <button class="btn-primary" onclick="sendOTP()">GỬI MÃ OTP</button>
+                        </div>
+                        <div id="reg-step-2" class="hidden">
+                            <input type="text" id="reg-otp" placeholder="Nhập mã 6 số từ Email">
+                            <div class="password-group">
+                                <input type="password" id="reg-pass-final" placeholder="Tạo mật khẩu">
+                                <i class="fas fa-eye toggle-password" onclick="togglePass('reg-pass-final', this)"></i>
+                            </div>
+                            <button class="btn-primary" onclick="finalRegister()">HOÀN TẤT ĐĂNG KÝ</button>
+                        </div>
+                        <p style="text-align:center; margin-top:15px;"><a href="javascript:void(0)" onclick="switchAuth('login')">Quay lại Đăng nhập</a></p>
+                    </div>
+
+                    <div id="forgot-box" class="hidden">
+                        <h2 style="text-align: center; margin-bottom: 10px;">Khôi Phục Mật Khẩu</h2>
+                        <input type="email" id="forgot-email" placeholder="Nhập Email của bạn">
+                        <button class="btn-primary" onclick="handleForgot()">GỬI LINK KHÔI PHỤC</button>
+                        <p style="text-align:center; margin-top:15px;"><a href="javascript:void(0)" onclick="switchAuth('login')">Quay lại</a></p>
+                    </div>
                 </div>
             </div>
 
@@ -138,7 +163,7 @@
                 <div id="history-page" class="page hidden">
                     <div class="card">
                         <h2>Mã QR của tôi</h2>
-                        <div style="overflow-x: auto;"><table id="history-table">
+                        <div style="overflow-x: auto;"><table>
                             <thead><tr><th style="width:70px;">Mã QR</th><th>Thông tin</th><th style="width:130px; text-align:center;">Hành động</th></tr></thead>
                             <tbody id="history-body"></tbody>
                         </table></div>
@@ -173,8 +198,10 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
+    emailjs.init("KCT_RQ-xwy-9Z4u6_");
 
     let qrcode = new QRCode(document.getElementById("qrcode"), { width: 220, height: 220 });
+    let currentOTP = "";
 
     function getShortUrl(id) { return `${window.location.protocol}//${window.location.host}/${id}`; }
     function toggleSidebar() { document.getElementById('sidebar').classList.toggle('show'); }
@@ -183,6 +210,15 @@
         if (input.type === "password") { input.type = "text"; icon.classList.replace("fa-eye", "fa-eye-slash"); }
         else { input.type = "password"; icon.classList.replace("fa-eye-slash", "fa-eye"); }
     }
+    
+    // HÀM CHUYỂN ĐỔI KHUNG AUTH (ĐÃ SỬA LỖI)
+    function switchAuth(type) {
+        document.getElementById('login-box').classList.add('hidden');
+        document.getElementById('register-box').classList.add('hidden');
+        document.getElementById('forgot-box').classList.add('hidden');
+        document.getElementById(type + '-box').classList.remove('hidden');
+    }
+
     function copyLink(link) { navigator.clipboard.writeText(link).then(() => alert("✅ Đã sao chép link!")); }
 
     function showPage(pageId) {
@@ -196,18 +232,43 @@
         if (window.innerWidth < 768) document.getElementById('sidebar').classList.remove('show');
     }
 
-    // --- LOGIC ĐỔI MẬT KHẨU ---
+    // --- AUTH LOGIC ---
+    function login() { auth.signInWithEmailAndPassword(document.getElementById('login-email').value, document.getElementById('login-pass').value).catch(() => alert("Email hoặc mật khẩu không đúng!")); }
+    
+    function sendOTP() {
+        const email = document.getElementById('reg-email').value;
+        const name = document.getElementById('reg-name').value;
+        if(!email || !name) return alert("Vui lòng nhập tên và email!");
+        currentOTP = Math.floor(100000 + Math.random() * 900000).toString();
+        emailjs.send("service_4eb5c0n", "template_n18elg4", { to_email: email, to_name: name, otp_code: currentOTP })
+            .then(() => { alert("Đã gửi mã OTP!"); document.getElementById('reg-step-2').classList.remove('hidden'); });
+    }
+
+    async function finalRegister() {
+        const otp = document.getElementById('reg-otp').value;
+        const pass = document.getElementById('reg-pass-final').value;
+        const email = document.getElementById('reg-email').value;
+        if (otp !== currentOTP) return alert("Sai mã OTP!");
+        try {
+            const res = await auth.createUserWithEmailAndPassword(email, pass);
+            await db.collection('users').doc(res.user.uid).set({ 
+                email, name: document.getElementById('reg-name').value, 
+                status: 'active', date: firebase.firestore.Timestamp.now() 
+            });
+            alert("Đăng ký thành công!");
+        } catch (e) { alert(e.message); }
+    }
+
+    function handleForgot() { auth.sendPasswordResetEmail(document.getElementById('forgot-email').value).then(() => alert("Đã gửi link khôi phục!")); }
+    
     async function changePassword() {
         const nP = document.getElementById('new-pass').value;
         const cP = document.getElementById('confirm-pass').value;
-        if (nP.length < 6) return alert("Mật khẩu tối thiểu 6 ký tự!");
-        if (nP !== cP) return alert("Xác nhận mật khẩu không khớp!");
-        auth.currentUser.updatePassword(nP).then(() => {
-            alert("Cập nhật mật khẩu thành công!");
-            showPage('create-page');
-        }).catch(e => alert("Lỗi: " + e.message));
+        if (nP.length < 6 || nP !== cP) return alert("Mật khẩu không khớp hoặc quá ngắn!");
+        auth.currentUser.updatePassword(nP).then(() => { alert("Thành công!"); showPage('create-page'); }).catch(e => alert(e.message));
     }
 
+    // --- QR LOGIC ---
     async function generateQR() {
         const title = document.getElementById('qr-title').value.trim();
         const url = document.getElementById('qr-url').value.trim();
@@ -268,7 +329,6 @@
         showPage('create-page');
     }
     async function deleteQR(id) { if(confirm("Xóa mã này?")) { await db.collection('qrcodes').doc(id).delete(); loadHistory(); } }
-    function login() { auth.signInWithEmailAndPassword(document.getElementById('login-email').value, document.getElementById('login-pass').value).catch(() => alert("Lỗi!")); }
     function logout() { auth.signOut(); }
     function navToCreate() { 
         document.getElementById('edit-id').value = ""; document.getElementById('qr-title').value = "";
@@ -276,6 +336,7 @@
         document.getElementById('qr-display').classList.add('hidden');
         showPage('create-page'); 
     }
+
     auth.onAuthStateChanged(user => {
         if (user) {
             document.getElementById('guest-view').classList.add('hidden');
@@ -288,6 +349,7 @@
             document.getElementById('user-view').classList.add('hidden');
             document.getElementById('sidebar').classList.add('hide');
             document.getElementById('main-content').classList.remove('with-sidebar');
+            switchAuth('login');
         }
     });
 </script>
