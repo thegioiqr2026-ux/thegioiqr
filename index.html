@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thế Giới QR | Version 1.7</title>
+    <title>Thế Giới QR | Version 1.8</title>
     
     <link rel="icon" type="image/jpeg" href="logo_Group.jpg">
     <link rel="icon" href="data:,">
@@ -74,7 +74,7 @@
         <div class="sidebar-header">
             <img src="logo_Group.jpg" alt="Logo">
             <h3>THEGIOI<span style="color:var(--primary)">QR</span></h3>
-            <span style="font-size:10px; color:#999">Version 1.7</span>
+            <span style="font-size:10px; color:#999">Version 1.8</span>
             <i class="fas fa-times close-sidebar" onclick="toggleSidebar()"></i>
         </div>
         <div class="nav-link active" onclick="navToCreate()"><i class="fas fa-plus-circle"></i> Tạo Mã QR</div>
@@ -103,20 +103,20 @@
                 <input type="hidden" id="edit-id">
                 
                 <div style="margin-top: 20px;">
-                    <label class="input-label">Tên gọi nhớ (Tên hiển thị trên hệ thống)</label>
-                    <input type="text" id="qr-title" placeholder="Ví dụ: Tài liệu huấn luyện VDC">
+                    <label class="input-label">Tên gọi nhớ</label>
+                    <input type="text" id="qr-title" placeholder="Ví dụ: Tài liệu HSE">
                     
-                    <label class="input-label">Link đích hiện tại (Nơi người dùng sẽ đến khi quét mã)</label>
-                    <input type="text" id="qr-url" placeholder="https://drive.google.com/...">
+                    <label class="input-label">Link đích hiện tại</label>
+                    <input type="text" id="qr-url" placeholder="https://...">
                     
                     <button class="btn-primary" id="submit-btn" onclick="generateQR()">LƯU & XUẤT MÃ ĐỘNG</button>
                 </div>
                 
                 <div id="qr-display" class="hidden" style="text-align:center; margin-top:25px; border-top: 2px dashed #eee; padding-top: 25px;">
-                    <p style="font-size: 13px; color: #27ae60; font-weight: bold; margin-bottom: 15px;"><i class="fas fa-check-circle"></i> Hình ảnh mã QR cho liên kết trên:</p>
+                    <p style="font-size: 13px; color: #27ae60; font-weight: bold; margin-bottom: 15px;"><i class="fas fa-check-circle"></i> Mã QR của bạn (Dùng mãi mãi):</p>
                     <div id="qrcode" style="display:inline-block; padding:15px; background:#fff; border:1px solid #ddd; border-radius: 12px;"></div>
                     <div style="margin-top:15px;">
-                        <button id="dl-btn" style="background:#34495e; color:white; padding:12px 25px;"><i class="fas fa-download"></i> TẢI ẢNH QR VỀ MÁY</button>
+                        <button id="dl-btn" style="background:#34495e; color:white; padding:12px 25px;"><i class="fas fa-download"></i> TẢI ẢNH QR</button>
                     </div>
                 </div>
             </div>
@@ -150,9 +150,10 @@
         </div>
     </div>
 
-    <footer>ThegioiQR.com | Version 1.7 | Mr. An toàn - 0399.496.319</footer>
+    <footer>ThegioiQR.com | Version 1.8 | Mr. An toàn - 0399.496.319</footer>
 
 <script>
+    // --- FIREBASE ---
     const firebaseConfig = { apiKey: "AIzaSyCjZfDgE4JFRilXh5dCtrTFLA3-BlerRNE", authDomain: "thegioiqr-2026.firebaseapp.com", projectId: "thegioiqr-2026", storageBucket: "thegioiqr-2026.firebasestorage.app", messagingSenderId: "911702916265", appId: "1:911702916265:web:d42d948ebb7e7a53dcbdb8" };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
@@ -160,26 +161,31 @@
 
     let qrcode = new QRCode(document.getElementById("qrcode"), { width: 220, height: 220, colorDark : "#2c3e50" });
 
+    // --- LOGIC NHẬN DIỆN DOMAIN TỰ ĐỘNG ---
+    function getBaseUrl() {
+        // Lấy đúng protocol (http/https) và domain hiện tại (thegioiqr.com)
+        const protocol = window.location.protocol;
+        const host = window.location.host;
+        const path = window.location.pathname.split('/').slice(0, -1).join('/');
+        return `${protocol}//${host}${path}`;
+    }
+
     function toggleSidebar() { document.getElementById('sidebar').classList.toggle('show'); }
     function togglePass(id, icon) {
         const input = document.getElementById(id);
         if (input.type === "password") { input.type = "text"; icon.classList.replace("fa-eye", "fa-eye-slash"); }
         else { input.type = "password"; icon.classList.replace("fa-eye-slash", "fa-eye"); }
     }
-    
     function getDomain(url) {
         try { let domain = new URL(url).hostname; return domain.startsWith('www.') ? domain.substring(4) : domain; } 
         catch (e) { return "Link"; }
     }
-
-    function navToCreate() { resetForm(); showPage('create-page'); }
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
         document.getElementById(pageId).classList.remove('hidden');
         if (pageId === 'history-page') loadHistory();
-        if (window.innerWidth < 768) document.getElementById('sidebar').classList.remove('show');
     }
-
+    function navToCreate() { resetForm(); showPage('create-page'); }
     function resetForm() {
         document.getElementById('edit-id').value = ""; 
         document.getElementById('qr-title').value = "";
@@ -190,12 +196,11 @@
         qrcode.clear();
     }
 
-    // --- TẠO & CẬP NHẬT ---
     async function generateQR() {
         const title = document.getElementById('qr-title').value;
         const url = document.getElementById('qr-url').value;
         const editId = document.getElementById('edit-id').value;
-        if (!title || !url) return alert("Vui lòng nhập đủ thông tin!");
+        if (!title || !url) return alert("Vui lòng điền đủ thông tin!");
 
         let finalId = editId;
         const data = { uid: auth.currentUser.uid, title, url, date: firebase.firestore.Timestamp.now() };
@@ -203,13 +208,15 @@
         try {
             if (editId) {
                 await db.collection('qrcodes').doc(editId).update(data);
-                alert("✅ Cập nhật nội dung thành công!");
+                alert("✅ Đã cập nhật!");
             } else {
                 const docRef = await db.collection('qrcodes').add(data);
                 finalId = docRef.id;
             }
 
-            const dynamicLink = `https://trancongdep.github.io/trancongdeppage/go.html?id=${finalId}`;
+            // DÙNG HÀM getBaseUrl ĐỂ TẠO LINK ĐỘNG THEO DOMAIN HIỆN TẠI
+            const dynamicLink = `${getBaseUrl()}/go.html?id=${finalId}`;
+            
             qrcode.clear(); 
             qrcode.makeCode(dynamicLink);
             document.getElementById('qr-display').classList.remove('hidden');
@@ -233,29 +240,24 @@
                 <td class="col-info"><span class="title-text">${d.title}</span><small style="color:#999">${d.date.toDate().toLocaleDateString('vi-VN')}</small></td>
                 <td class="col-url"><a href="${d.url}" target="_blank" class="domain-tag">${domain}</a></td>
                 <td class="col-action">
-                    <button class="btn-icon btn-edit" onclick="editQR('${doc.id}','${d.title}','${d.url}')" title="Sửa"><i class="fas fa-pen"></i></button>
-                    <button class="btn-icon btn-delete" onclick="deleteQR('${doc.id}')" title="Xóa"><i class="fas fa-trash"></i></button>
+                    <button class="btn-icon btn-edit" onclick="editQR('${doc.id}','${d.title}','${d.url}')"><i class="fas fa-pen"></i></button>
+                    <button class="btn-icon btn-delete" onclick="deleteQR('${doc.id}')"><i class="fas fa-trash"></i></button>
                 </td>
             </tr>`;
         });
     }
 
-    // --- LOGIC KHI BẤM NÚT SỬA ---
     function editQR(id, title, url) {
         document.getElementById('edit-id').value = id; 
         document.getElementById('qr-title').value = title;
         document.getElementById('qr-url').value = url; 
-        
-        // Cập nhật giao diện trang sửa
-        document.getElementById('form-title').innerText = "Cập Nhật Thông Tin";
+        document.getElementById('form-title').innerText = "Cập Nhật Nội Dung";
         document.getElementById('submit-btn').innerText = "CẬP NHẬT";
         
-        // Hiển thị ngay mã QR hiện tại để người dùng thấy
-        const dynamicLink = `https://trancongdep.github.io/trancongdeppage/go.html?id=${id}`;
+        const dynamicLink = `${getBaseUrl()}/go.html?id=${id}`;
         qrcode.clear(); 
         qrcode.makeCode(dynamicLink);
         document.getElementById('qr-display').classList.remove('hidden');
-        
         showPage('create-page');
     }
 
