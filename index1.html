@@ -1,22 +1,140 @@
-/* Style cho thanh tiến trình - Bạn có thể tùy chỉnh màu sắc cho hợp với UI cũ */
-#progress-container-v129 {
-    width: 100%;
-    background-color: #e0e0e0;
-    border-radius: 5px;
-    margin-top: 15px;
-    display: none; /* Ẩn đi khi chưa bấm */
-    overflow: hidden;
-}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VDC - Cập nhật v1.29</title>
+    <style>
+        /* GIỮ NGUYÊN GIAO DIỆN CŨ CỦA BẠN (V1.28) */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #ffffff;
+        }
 
-#progress-bar-v129 {
-    width: 0%;
-    height: 8px;
-    background-color: #2196F3; /* Màu xanh nước biển hiện đại */
-    transition: width 0.4s ease;
-}
+        #btnStart {
+            padding: 12px 35px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
 
-/* Hiệu ứng nút khi đang load */
-.btn-loading {
-    opacity: 0.7;
-    cursor: not-allowed !important;
-}
+        #btnStart:active {
+            transform: scale(0.98);
+        }
+
+        /* PHẦN BỔ SUNG CHO V1.29 (PROGRESS BAR) */
+        #progress-area {
+            display: none; /* Ẩn mặc định */
+            width: 250px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .progress-bg {
+            width: 100%;
+            height: 6px;
+            background-color: #eee;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background-color: #28a745;
+            transition: width 0.3s ease;
+        }
+
+        #status-msg {
+            font-size: 13px;
+            color: #666;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <button id="btnStart" onclick="runVersion129()">Bắt đầu ngay</button>
+
+    <div id="progress-area">
+        <div class="progress-bg">
+            <div class="progress-fill" id="progressBar"></div>
+        </div>
+        <div id="status-msg">Đang nạp dữ liệu...</div>
+    </div>
+
+    <script>
+        /**
+         * LOGIC XỬ LÝ PHIÊN BẢN 1.29
+         * Giải quyết lỗi "bấm được nhưng không chuyển nội dung"
+         */
+        async function runVersion129() {
+            const btn = document.getElementById('btnStart');
+            const area = document.getElementById('progress-area');
+            const bar = document.getElementById('progressBar');
+            const msg = document.getElementById('status-msg');
+
+            // 1. Phản hồi lập tức khi Click
+            btn.disabled = true;
+            btn.style.opacity = "0.6";
+            btn.innerText = "Đang xử lý...";
+            area.style.display = 'block';
+
+            // 2. Chạy thanh tiến trình giả lập (Tạo cảm giác máy mạnh, chạy nhanh)
+            let currentWidth = 0;
+            const progressInterval = setInterval(() => {
+                if (currentWidth < 85) {
+                    currentWidth += Math.random() * 12;
+                    if (currentWidth > 85) currentWidth = 85;
+                    bar.style.width = currentWidth + '%';
+                }
+            }, 150);
+
+            try {
+                // 3. THỰC THI NẠP NỘI DUNG (Async)
+                // Đây là nơi xử lý việc chuyển nội dung thực tế
+                await callDataContent();
+
+                // 4. Hoàn tất khi dữ liệu đã sẵn sàng
+                clearInterval(progressInterval);
+                bar.style.width = '100%';
+                msg.innerText = "Thành công! Đang chuyển tiếp...";
+                msg.style.color = "#28a745";
+
+                setTimeout(() => {
+                    // Lệnh chuyển nội dung hoặc trang mới của bạn ở đây
+                    console.log("Đã chuyển vào nội dung v1.29");
+                    // window.location.href = "trang-chu.html"; // Ví dụ
+                }, 400);
+
+            } catch (err) {
+                clearInterval(progressInterval);
+                btn.disabled = false;
+                btn.style.opacity = "1";
+                btn.innerText = "Bắt đầu ngay";
+                msg.innerText = "Lỗi kết nối. Vui lòng thử lại.";
+                msg.style.color = "red";
+            }
+        }
+
+        // Hàm mô phỏng nạp dữ liệu (Bạn thay thế bằng code thực tế của mình)
+        function callDataContent() {
+            return new Promise((resolve) => {
+                // Giả lập độ trễ server 1.5 giây
+                setTimeout(resolve, 1500);
+            });
+        }
+    </script>
+</body>
+</html>
