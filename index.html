@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thế Giới QR | Version 1.26</title>
+    <title>Thế Giới QR | Version 1.29</title>
     
     <link rel="icon" type="image/jpeg" href="logo_Group.jpg">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -34,6 +34,11 @@
         input { width: 100%; padding: 13px; margin: 8px 0; border: 1.5px solid #eee; border-radius: 10px; outline: none; }
         button { padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .btn-primary { background: var(--primary); color: white; width: 100%; }
+        
+        /* CẢI TIẾN V1.29: PROGRESS BAR */
+        .progress-container-v129 { width: 100%; background: #eee; height: 5px; border-radius: 10px; margin-top: 15px; display: none; overflow: hidden; }
+        .progress-bar-v129 { width: 0%; height: 100%; background: var(--primary); transition: width 0.3s; }
+
         .password-group { position: relative; width: 100%; margin: 8px 0; }
         .password-group input { margin: 0; padding-right: 45px; }
         .toggle-password { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #999; z-index: 10; }
@@ -81,7 +86,13 @@
                         <h2 style="text-align: center; margin-bottom: 20px;">Đăng Nhập</h2>
                         <input type="email" id="login-email" placeholder="Email">
                         <div class="password-group"><input type="password" id="login-pass" placeholder="Mật khẩu"><i class="fas fa-eye toggle-password" onclick="togglePass('login-pass', this)"></i></div>
-                        <button class="btn-primary" onclick="login()">BẮT ĐẦU NGAY</button>
+                        
+                        <button class="btn-primary" id="btn-login-v129" onclick="login()">BẮT ĐẦU NGAY</button>
+                        
+                        <div class="progress-container-v129" id="prog-cont">
+                            <div class="progress-bar-v129" id="prog-bar"></div>
+                        </div>
+
                         <p style="text-align: center; margin-top: 20px;"><a href="javascript:void(0)" onclick="switchAuth('register')" style="color:var(--primary); font-weight:bold; text-decoration:none;">Đăng ký</a> | <a href="javascript:void(0)" onclick="switchAuth('forgot')" style="color:#888; text-decoration:none; font-size:14px;">Quên mật khẩu?</a></p>
                     </div>
                     <div id="register-box" class="hidden">
@@ -135,11 +146,43 @@
     function showPage(pageId) { document.querySelectorAll('.page').forEach(p => p.classList.add('hidden')); document.getElementById(pageId).classList.remove('hidden'); if(window.innerWidth < 768) document.getElementById('sidebar').classList.remove('show'); if(pageId==='history-page') loadHistory(); }
     function copyLink(link) { navigator.clipboard.writeText(link).then(() => alert("✅ Đã sao chép link!")); }
 
+    // CẢI TIẾN HÀM LOGIN CHO V1.29
     function login() { 
         const email = document.getElementById('login-email').value; 
         const pass = document.getElementById('login-pass').value;
+        const btn = document.getElementById('btn-login-v129');
+        const progCont = document.getElementById('prog-cont');
+        const progBar = document.getElementById('prog-bar');
+
         if(!email || !pass) return alert("Vui lòng nhập đủ Email và Mật khẩu!");
-        auth.signInWithEmailAndPassword(email, pass).catch(e => alert("Lỗi: " + e.message)); 
+
+        // Phản hồi UI tức thì
+        btn.disabled = true;
+        btn.innerText = "ĐANG XỬ LÝ...";
+        progCont.style.display = 'block';
+        
+        let width = 0;
+        const interval = setInterval(() => {
+            if (width < 90) {
+                width += Math.random() * 15;
+                if (width > 90) width = 90;
+                progBar.style.width = width + '%';
+            }
+        }, 100);
+
+        auth.signInWithEmailAndPassword(email, pass)
+            .then(() => {
+                progBar.style.width = '100%';
+                clearInterval(interval);
+            })
+            .catch(e => {
+                clearInterval(interval);
+                btn.disabled = false;
+                btn.innerText = "BẮT ĐẦU NGAY";
+                progCont.style.display = 'none';
+                progBar.style.width = '0%';
+                alert("Lỗi: " + e.message);
+            }); 
     }
 
     async function generateQR() {
@@ -226,7 +269,9 @@
             showPage('create-page');
         } else {
             document.getElementById('guest-view').classList.remove('hidden'); document.getElementById('user-view').classList.add('hidden');
-            document.getElementById('sidebar').classList.add('hide'); document.getElementById('main-content').classList.remove('with-sidebar');
+            document.getElementById('sidebar').classList.add('hide'); document.getElementById('main-content').classList.remove('remove-sidebar'); 
+            // Sửa lỗi hiển thị khi logout
+            document.getElementById('main-content').classList.remove('with-sidebar');
             document.getElementById('user-display-info').classList.add('hidden'); switchAuth('login');
         }
     });
