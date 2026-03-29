@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thế Giới QR | Version 1.27</title>
+    <title>Thế Giới QR | Version 1.28</title>
     
     <link rel="icon" type="image/jpeg" href="logo_Group.jpg">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -17,7 +17,7 @@
         :root { --primary: #27ae60; --dark: #2c3e50; --light: #ecf0f1; --sidebar-width: 260px; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background: #f4f7f6; display: flex; flex-direction: column; min-height: 100vh; }
-        #main-wrapper { flex: 1; display: flex; flex-direction: column; }
+        #main-wrapper { flex: 1; display: flex; flex-direction: column; position: relative; z-index: 1; }
         #sidebar { width: var(--sidebar-width); background: var(--dark); color: white; transition: 0.3s; position: fixed; height: 100%; z-index: 1000; }
         #sidebar.hide { transform: translateX(-100%); }
         .sidebar-header { padding: 25px 20px; text-align: center; border-bottom: 1px solid #34495e; position: relative; }
@@ -27,29 +27,37 @@
         .user-email { display: block; font-style: italic; font-size: 11px; color: #bdc3c7; margin-top: 3px; }
         .nav-link { padding: 15px 25px; display: block; color: #bdc3c7; text-decoration: none; cursor: pointer; transition: 0.3s; }
         .nav-link:hover, .nav-link.active { background: #34495e; color: white; border-left: 5px solid var(--primary); }
-        #main-content { transition: 0.3s; padding: 20px; flex: 1; }
+        #main-content { transition: 0.3s; padding: 20px; flex: 1; z-index: 2; }
         #main-content.with-sidebar { margin-left: var(--sidebar-width); }
         .topbar { display: flex; background: white; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); justify-content: space-between; align-items: center; }
-        .auth-card { max-width: 420px; margin: 40px auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border-top: 5px solid var(--primary); }
+        
+        /* Cải thiện hiển thị Card Đăng nhập */
+        .auth-card { max-width: 420px; margin: 40px auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border-top: 5px solid var(--primary); position: relative; z-index: 10; }
         input { width: 100%; padding: 13px; margin: 8px 0; border: 1.5px solid #eee; border-radius: 10px; outline: none; }
         input:focus { border-color: var(--primary); }
-        button { padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .btn-primary { background: var(--primary); color: white; width: 100%; }
+        button { padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; display: block; }
+        .btn-primary { background: var(--primary); color: white; width: 100%; z-index: 20; position: relative; }
+        .btn-primary:active { transform: scale(0.98); }
+        
         .password-group { position: relative; width: 100%; margin: 8px 0; }
         .password-group input { margin: 0; padding-right: 45px; }
-        .toggle-password { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #999; z-index: 10; }
+        .toggle-password { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #999; z-index: 15; }
         .short-link-input-group { display: flex; align-items: center; background: #f9f9f9; border-radius: 10px; padding: 0 10px; border: 1.5px solid #eee; margin-top: 8px; }
         .short-link-prefix { color: #888; font-size: 14px; font-weight: bold; white-space: nowrap; }
         .short-link-input-group input { border: none; background: transparent; padding: 13px 5px; margin: 0; }
         .hidden { display: none !important; }
         .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        
         table { width: 100%; border-collapse: collapse; min-width: 500px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
         .qr-thumb-box { width: 50px; height: 50px; background: white; border: 1px solid #eee; border-radius: 5px; padding: 2px; }
         .qr-thumb-box img { width: 100% !important; height: 100% !important; }
         .btn-icon { width: 34px; height: 34px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; color: white; margin: 0 2px; border: none; cursor: pointer; }
         .btn-edit { background: #3498db; } .btn-delete { background: #e74c3c; } .btn-copy { background: #f39c12; }
-        footer { background: var(--dark); color: #bdc3c7; text-align: center; padding: 30px; font-size: 14px; margin-top: auto; }
+        
+        footer { background: var(--dark); color: #bdc3c7; text-align: center; padding: 25px; font-size: 13px; margin-top: auto; border-top: 1px solid #34495e; }
+        .version-badge { display: block; margin-top: 8px; font-size: 11px; opacity: 0.5; font-weight: normal; }
+
         @media (max-width: 768px) { #main-content.with-sidebar { margin-left: 0; } #sidebar { transform: translateX(-100%); } #sidebar.show { transform: translateX(0); } }
         @media (min-width: 769px) { .topbar { display: none; } }
     </style>
@@ -76,22 +84,44 @@
             <div class="topbar"><i class="fas fa-bars" onclick="toggleSidebar()"></i><strong>THEGIOIQR.COM</strong><img src="logo_Group.jpg" style="width:30px; border-radius:50%;"></div>
 
             <div id="guest-view">
-                <section style="text-align: center; padding: 30px 10px;"><h1>Chào mừng đến với <span style="color:var(--primary)">Thế Giới QR</span></h1><p style="color: #666; margin-top: 10px;">Link rút gọn & QR Động sạch 100% quảng cáo.</p></section>
+                <section style="text-align: center; padding: 30px 10px;">
+                    <h1>Chào mừng đến với <span style="color:var(--primary)">Thế Giới QR</span></h1>
+                    <p style="color: #666; margin-top: 10px;">Link rút gọn & QR Động sạch 100% quảng cáo.</p>
+                </section>
                 <div class="auth-card">
                     <div id="login-box">
                         <h2 style="text-align: center; margin-bottom: 20px;">Đăng Nhập</h2>
-                        <input type="email" id="login-email" placeholder="Email">
-                        <div class="password-group"><input type="password" id="login-pass" placeholder="Mật khẩu"><i class="fas fa-eye toggle-password" onclick="togglePass('login-pass', this)"></i></div>
+                        <input type="email" id="login-email" placeholder="Email của bạn" onkeypress="handleEnter(event, 'login')">
+                        <div class="password-group">
+                            <input type="password" id="login-pass" placeholder="Mật khẩu" onkeypress="handleEnter(event, 'login')">
+                            <i class="fas fa-eye toggle-password" onclick="togglePass('login-pass', this)"></i>
+                        </div>
                         <button class="btn-primary" onclick="login()">BẮT ĐẦU NGAY</button>
-                        <p style="text-align: center; margin-top: 20px;"><a href="javascript:void(0)" onclick="switchAuth('register')" style="color:var(--primary); font-weight:bold; text-decoration:none;">Đăng ký</a> | <a href="javascript:void(0)" onclick="switchAuth('forgot')" style="color:#888; text-decoration:none; font-size:14px;">Quên mật khẩu?</a></p>
+                        <p style="text-align: center; margin-top: 20px;">
+                            <a href="javascript:void(0)" onclick="switchAuth('register')" style="color:var(--primary); font-weight:bold; text-decoration:none;">Đăng ký</a> | 
+                            <a href="javascript:void(0)" onclick="switchAuth('forgot')" style="color:#888; text-decoration:none; font-size:14px;">Quên mật khẩu?</a>
+                        </p>
                     </div>
                     <div id="register-box" class="hidden">
                         <h2 style="text-align: center; margin-bottom: 10px;">Đăng Ký</h2>
-                        <div id="reg-step-1"><input type="text" id="reg-name" placeholder="Họ và tên"><input type="email" id="reg-email" placeholder="Email nhận OTP"><button class="btn-primary" onclick="sendOTP()">GỬI MÃ OTP</button></div>
-                        <div id="reg-step-2" class="hidden"><input type="text" id="reg-otp" placeholder="Mã OTP"><input type="password" id="reg-pass-final" placeholder="Mật khẩu"><button class="btn-primary" onclick="finalRegister()">HOÀN TẤT</button></div>
+                        <div id="reg-step-1">
+                            <input type="text" id="reg-name" placeholder="Họ và tên">
+                            <input type="email" id="reg-email" placeholder="Email nhận OTP">
+                            <button class="btn-primary" onclick="sendOTP()">GỬI MÃ OTP</button>
+                        </div>
+                        <div id="reg-step-2" class="hidden">
+                            <input type="text" id="reg-otp" placeholder="Mã OTP từ Email">
+                            <input type="password" id="reg-pass-final" placeholder="Mật khẩu mới">
+                            <button class="btn-primary" onclick="finalRegister()">HOÀN TẤT ĐĂNG KÝ</button>
+                        </div>
+                        <p style="text-align:center; margin-top:15px;"><a href="javascript:void(0)" onclick="switchAuth('login')">Quay lại Đăng nhập</a></p>
+                    </div>
+                    <div id="forgot-box" class="hidden">
+                        <h2 style="text-align: center;">Khôi Phục</h2>
+                        <input type="email" id="forgot-email" placeholder="Nhập Email">
+                        <button class="btn-primary" onclick="handleForgot()">GỬI LINK</button>
                         <p style="text-align:center; margin-top:15px;"><a href="javascript:void(0)" onclick="switchAuth('login')">Quay lại</a></p>
                     </div>
-                    <div id="forgot-box" class="hidden"><h2 style="text-align: center;">Khôi Phục</h2><input type="email" id="forgot-email" placeholder="Email"><button class="btn-primary" onclick="handleForgot()">GỬI LINK KHÔI PHỤC</button><p style="text-align:center; margin-top:15px;"><a href="javascript:void(0)" onclick="switchAuth('login')">Quay lại</a></p></div>
                 </div>
             </div>
 
@@ -118,7 +148,12 @@
                 </div>
             </div>
         </div>
-        <footer><img src="logo_Group.jpg" style="width:40px; border-radius:50%; margin-bottom:10px;"><div>Hệ thống vận hành bởi <b>Mr. An Toàn - 0399.496.319</b></div></footer>
+
+        <footer>
+            <img src="logo_Group.jpg" style="width:40px; border-radius:50%; margin-bottom:10px;">
+            <div>Hệ thống vận hành bởi <b>Mr. An Toàn - 0399.496.319</b></div>
+            <span class="version-badge">Phiên bản: 1.28</span>
+        </footer>
     </div>
 
 <script>
@@ -135,13 +170,14 @@
     function switchAuth(type) { document.getElementById('login-box').classList.add('hidden'); document.getElementById('register-box').classList.add('hidden'); document.getElementById('forgot-box').classList.add('hidden'); document.getElementById(type + '-box').classList.remove('hidden'); }
     function showPage(pageId) { document.querySelectorAll('.page').forEach(p => p.classList.add('hidden')); document.getElementById(pageId).classList.remove('hidden'); if(window.innerWidth < 768) document.getElementById('sidebar').classList.remove('show'); if(pageId==='history-page') loadHistory(); }
     function copyLink(link) { navigator.clipboard.writeText(link).then(() => alert("✅ Đã sao chép link!")); }
+    
+    function handleEnter(e, type) { if (e.key === "Enter") { if (type === 'login') login(); } }
 
-    // --- HÀM LOGIN ĐÃ ĐƯỢC FIX ---
     function login() { 
-        const email = document.getElementById('login-email').value.trim(); 
-        const pass = document.getElementById('login-pass').value;
-        if(!email || !pass) return alert("Vui lòng nhập Email và Mật khẩu!");
-        auth.signInWithEmailAndPassword(email, pass).catch(e => alert("Lỗi đăng nhập: " + e.message)); 
+        const e = document.getElementById('login-email').value.trim(); 
+        const p = document.getElementById('login-pass').value;
+        if(!e || !p) return alert("Vui lòng nhập Email và Mật khẩu!");
+        auth.signInWithEmailAndPassword(e, p).catch(err => alert("Lỗi: " + err.message)); 
     }
 
     async function generateQR() {
@@ -197,7 +233,7 @@
     async function showAccountPage() { const doc = await db.collection('users').doc(auth.currentUser.uid).get(); if(doc.exists) document.getElementById('acc-name').value = doc.data().name; showPage('settings-page'); }
     async function updateAccount() { const n = document.getElementById('acc-name').value; const p = document.getElementById('acc-pass').value; await db.collection('users').doc(auth.currentUser.uid).update({name: n}); if(p) await auth.currentUser.updatePassword(p); alert("Đã cập nhật!"); location.reload(); }
     function logout() { auth.signOut(); }
-    function navToCreate() { document.getElementById('edit-id').value=""; document.getElementById('qr-title').value=""; document.getElementById('qr-url').value=""; document.getElementById('qr-short-name').value=""; document.getElementById('qr-display').classList.add('hidden'); showPage('create-page'); }
+    function navToCreate() { document.getElementById('edit-id').value=""; document.getElementById('qr-title').value=""; document.getElementById('qr-url').value=""; document.getElementById('qr-short-name').value=""; document.getElementById('qr-display').classList.add('hidden'); document.getElementById('form-title').innerText = "Tạo Link & Mã QR"; showPage('create-page'); }
 
     function sendOTP() {
         const email = document.getElementById('reg-email').value; const name = document.getElementById('reg-name').value;
@@ -229,8 +265,7 @@
         } else {
             document.getElementById('guest-view').classList.remove('hidden'); document.getElementById('user-view').classList.add('hidden');
             document.getElementById('sidebar').classList.add('hide'); document.getElementById('main-content').classList.remove('with-sidebar');
-            document.getElementById('user-display-info').classList.add('hidden');
-            switchAuth('login');
+            document.getElementById('user-display-info').classList.add('hidden'); switchAuth('login');
         }
     });
 </script>
