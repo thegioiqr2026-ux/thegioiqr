@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Đang chuyển hướng... | Thế Giới QR</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div style="text-align: center; margin-top: 100px; font-family: Arial;">
+        <img src="logo_Group.jpg" style="width: 80px; border-radius: 50%;">
+        <p>Đang chuyển hướng đến tài liệu an toàn...</p>
+    </div>
+
+    <script>
+        const firebaseConfig = { /* Dán Config của bạn vào đây giống file index */ };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Lấy ID từ URL (ví dụ: go.html?id=abcxyz)
+        const urlParams = new URLSearchParams(window.location.search);
+        const qrId = urlParams.get('id');
+
+        if (qrId) {
+            db.collection('qrcodes').doc(qrId).get().then((doc) => {
+                if (doc.exists) {
+                    window.location.href = doc.data().url; // Chuyển hướng đến link gốc
+                } else {
+                    document.body.innerHTML = "Mã QR không tồn tại hoặc đã bị xóa.";
+                }
+            }).catch(err => {
+                console.error(err);
+                document.body.innerHTML = "Lỗi kết nối hệ thống.";
+            });
+        }
+    </script>
+</body>
+</html>
