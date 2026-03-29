@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thế Giới QR | Version 1.13</title>
+    <title>Thế Giới QR | Version 1.14</title>
     
     <link rel="icon" type="image/jpeg" href="logo_Group.jpg">
     <link rel="icon" href="data:,">
@@ -21,7 +21,6 @@
         body { background: #f4f7f6; display: flex; flex-direction: column; min-height: 100vh; }
         #main-wrapper { flex: 1; display: flex; flex-direction: column; }
 
-        /* SIDEBAR */
         #sidebar { width: var(--sidebar-width); background: var(--dark); color: white; transition: 0.3s; position: fixed; height: 100%; z-index: 1000; }
         #sidebar.hide { transform: translateX(-100%); }
         .sidebar-header { padding: 30px 20px; text-align: center; border-bottom: 1px solid #34495e; position: relative; }
@@ -31,12 +30,10 @@
         .nav-link { padding: 15px 25px; display: block; color: #bdc3c7; text-decoration: none; cursor: pointer; transition: 0.3s; }
         .nav-link:hover, .nav-link.active { background: #34495e; color: white; border-left: 5px solid var(--primary); }
 
-        /* CONTENT */
         #main-content { transition: 0.3s; padding: 20px; flex: 1; }
         #main-content.with-sidebar { margin-left: var(--sidebar-width); }
-        .topbar { display: none; background: white; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); justify-content: space-between; align-items: center; }
+        .topbar { display: flex; background: white; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); justify-content: space-between; align-items: center; }
 
-        /* AUTH CARD */
         #welcome-section { text-align: center; padding: 30px 10px; max-width: 700px; margin: 0 auto; }
         .auth-card { max-width: 420px; margin: 0 auto 40px; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border-top: 5px solid var(--primary); }
         
@@ -45,7 +42,6 @@
         button { padding: 13px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; width: 100%; transition: 0.3s; }
         .btn-primary { background: var(--primary); color: white; }
         
-        /* CỐ ĐỊNH Ô MẬT KHẨU CÓ CON MẮT */
         .password-group { position: relative; width: 100%; margin: 8px 0; }
         .password-group input { margin: 0; padding-right: 45px; }
         .toggle-password { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #999; z-index: 10; font-size: 14px; }
@@ -57,11 +53,11 @@
 
         @media (max-width: 768px) {
             #main-content.with-sidebar { margin-left: 0; }
-            .topbar { display: flex; }
             #sidebar { transform: translateX(-100%); }
             #sidebar.show { transform: translateX(0); }
             .close-sidebar { display: block; }
         }
+        @media (min-width: 769px) { .topbar { display: none; } }
     </style>
 </head>
 <body>
@@ -71,7 +67,7 @@
             <i class="fas fa-times close-sidebar" onclick="toggleSidebar()"></i>
             <img src="logo_Group.jpg" alt="Logo">
             <h3>THEGIOI<span style="color:var(--primary)">QR</span></h3>
-            <small style="color:#666">Version 1.13</small>
+            <small style="color:#666">Version 1.14</small>
         </div>
         <div class="nav-link active" onclick="navToCreate()"><i class="fas fa-plus-circle"></i> Tạo Mã QR</div>
         <div class="nav-link" onclick="showPage('history-page')"><i class="fas fa-history"></i> Mã QR của tôi</div>
@@ -90,7 +86,7 @@
             <div id="guest-view">
                 <section id="welcome-section">
                     <h1>Chào mừng đến với <span style="color:var(--primary)">Thế Giới QR</span></h1>
-                    <p style="color: #666; margin-top: 10px;">Giải pháp Mã QR Động chuyên biệt cho HSE & HR.</p>
+                    <p style="color: #666; margin-top: 10px;">Giải pháp Rút gọn link & QR Động chuyên biệt cho HSE & HR.</p>
                 </section>
                 <div class="auth-card">
                     <div id="login-box">
@@ -106,7 +102,6 @@
                             <a href="javascript:void(0)" onclick="switchAuth('forgot')" style="color:#888; text-decoration:none; font-size:14px;">Quên mật khẩu?</a>
                         </p>
                     </div>
-
                     <div id="register-box" class="hidden">
                         <h2 style="text-align: center;">Đăng Ký OTP</h2>
                         <div id="reg-step-1">
@@ -124,7 +119,6 @@
                         </div>
                         <p style="text-align:center; margin-top:15px;"><a href="javascript:void(0)" onclick="switchAuth('login')">Quay lại đăng nhập</a></p>
                     </div>
-
                     <div id="forgot-box" class="hidden">
                         <h2 style="text-align: center;">Khôi Phục</h2>
                         <input type="email" id="forgot-email" placeholder="Nhập Email">
@@ -139,23 +133,21 @@
                     <div class="card">
                         <h2 id="form-title">Tạo Mã QR Mới</h2>
                         <input type="hidden" id="edit-id">
-                        <input type="text" id="qr-title" placeholder="Tên tài liệu">
-                        <input type="text" id="qr-url" placeholder="Link đích (URL)">
-                        <button class="btn-primary" id="submit-btn" onclick="generateQR()">LƯU & XUẤT MÃ ĐỘNG</button>
-                        <div id="qr-display" class="hidden" style="text-align:center; margin-top:20px;">
-                            <div id="qrcode" style="display:inline-block; padding:10px; background:white; border:1px solid #ddd;"></div>
-                            <br><button id="dl-btn" style="background:#34495e; color:white; margin-top:10px;">TẢI ẢNH QR</button>
+                        <input type="text" id="qr-title" placeholder="Tên tài liệu gợi nhớ">
+                        <input type="text" id="qr-url" placeholder="Dán Link đích vào đây">
+                        <button class="btn-primary" id="submit-btn" onclick="generateQR()">LƯU & XUẤT LINK NGẮN</button>
+                        <div id="qr-display" class="hidden" style="text-align:center; margin-top:20px; border-top: 1px dashed #eee; padding-top: 20px;">
+                            <div id="qrcode" style="display:inline-block; padding:15px; background:white; border:1px solid #ddd; border-radius: 12px;"></div>
+                            <br><button id="dl-btn" style="background:#34495e; color:white; margin-top:15px; padding:10px 20px;">TẢI ẢNH QR VỀ MÁY</button>
                         </div>
                     </div>
                 </div>
-
                 <div id="history-page" class="page hidden">
                     <div class="card">
                         <h2>Mã QR của tôi</h2>
                         <div style="overflow-x: auto; margin-top:10px;"><table style="width:100%; border-collapse:collapse;"><tbody id="history-body"></tbody></table></div>
                     </div>
                 </div>
-
                 <div id="settings-page" class="page hidden">
                     <div class="card" style="max-width:400px; margin: 0 auto;">
                         <h2 style="margin-bottom: 20px;">Đổi Mật Khẩu</h2>
@@ -190,20 +182,20 @@
     let qrcode = new QRCode(document.getElementById("qrcode"), { width: 220, height: 220 });
     let currentOTP = "";
 
-    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('show'); }
-    
-    // Fix: Hàm toggle password hoạt động cho mọi ô có icon
-    function togglePass(id, icon) {
-        const input = document.getElementById(id);
-        if (input.type === "password") {
-            input.type = "text";
-            icon.classList.replace("fa-eye", "fa-eye-slash");
-        } else {
-            input.type = "password";
-            icon.classList.replace("fa-eye-slash", "fa-eye");
-        }
+    // --- HÀM RÚT GỌN LINK SIÊU NGẮN ---
+    function getShortUrl(id) {
+        const host = window.location.host;
+        const protocol = window.location.protocol;
+        // Trả về dạng: https://thegioiqr.com/ID
+        return `${protocol}//${host}/${id}`;
     }
 
+    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('show'); }
+    function togglePass(id, icon) {
+        const input = document.getElementById(id);
+        if (input.type === "password") { input.type = "text"; icon.classList.replace("fa-eye", "fa-eye-slash"); }
+        else { input.type = "password"; icon.classList.replace("fa-eye-slash", "fa-eye"); }
+    }
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
         document.getElementById(pageId).classList.remove('hidden');
@@ -214,82 +206,70 @@
         if (pageId === 'history-page') loadHistory();
         if (window.innerWidth < 768) document.getElementById('sidebar').classList.remove('show');
     }
-
     function navToCreate() { resetForm(); showPage('create-page'); }
-
     function switchAuth(type) {
         document.getElementById('login-box').classList.add('hidden');
         document.getElementById('register-box').classList.add('hidden');
         document.getElementById('forgot-box').classList.add('hidden');
         document.getElementById(type + '-box').classList.remove('hidden');
     }
-
     function resetForm() {
         document.getElementById('edit-id').value = ""; document.getElementById('qr-title').value = "";
         document.getElementById('qr-url').value = ""; document.getElementById('qr-display').classList.add('hidden');
-        document.getElementById('form-title').innerText = "Tạo Mã QR Mới"; document.getElementById('submit-btn').innerText = "LƯU & XUẤT MÃ ĐỘNG";
+        document.getElementById('form-title').innerText = "Tạo Mã QR Mới"; document.getElementById('submit-btn').innerText = "LƯU & XUẤT LINK NGẮN";
         qrcode.clear();
     }
 
-    // AUTH & OTP LOGIC
+    // --- AUTH LOGIC ---
     function login() { 
         const e = document.getElementById('login-email').value; 
         const p = document.getElementById('login-pass').value; 
-        auth.signInWithEmailAndPassword(e, p).catch(() => alert("Email hoặc mật khẩu không chính xác!")); 
+        auth.signInWithEmailAndPassword(e, p).catch(() => alert("Lỗi đăng nhập!")); 
     }
-
     function sendOTP(type) {
         const email = document.getElementById('reg-email').value;
         const name = document.getElementById('reg-name').value;
-        if (!email || !name) return alert("Vui lòng điền đủ thông tin!");
+        if (!email || !name) return alert("Thiếu thông tin!");
         currentOTP = Math.floor(100000 + Math.random() * 900000).toString();
         emailjs.send("service_4eb5c0n", "template_n18elg4", { to_email: email, to_name: name, otp_code: currentOTP })
-            .then(() => { alert("Đã gửi OTP qua Email!"); document.getElementById('reg-step-2').classList.remove('hidden'); });
+            .then(() => { alert("Đã gửi OTP!"); document.getElementById('reg-step-2').classList.remove('hidden'); });
     }
-
     async function finalRegister() {
         const email = document.getElementById('reg-email').value;
         const otp = document.getElementById('reg-otp').value;
         const pass = document.getElementById('reg-pass-final').value;
-        if (otp !== currentOTP) return alert("Mã OTP không đúng!");
+        if (otp !== currentOTP) return alert("Sai mã!");
         try {
             const res = await auth.createUserWithEmailAndPassword(email, pass);
             await db.collection('users').doc(res.user.uid).set({ email, name: document.getElementById('reg-name').value, status: 'active' });
-            alert("Đăng ký thành công!");
+            alert("Thành công!");
         } catch (e) { alert(e.message); }
     }
-
     function handleForgot() {
         const email = document.getElementById('forgot-email').value;
-        if(!email) return alert("Vui lòng nhập Email!");
-        auth.sendPasswordResetEmail(email).then(() => { alert("Đã gửi link khôi phục mật khẩu!"); switchAuth('login'); });
+        auth.sendPasswordResetEmail(email).then(() => { alert("Đã gửi link!"); switchAuth('login'); });
     }
-
     async function changePassword() {
         const nP = document.getElementById('new-pass').value;
         const cP = document.getElementById('confirm-pass').value;
-        if (nP.length < 6) return alert("Mật khẩu phải từ 6 ký tự!");
-        if (nP !== cP) return alert("Mật khẩu xác nhận không khớp!");
-        auth.currentUser.updatePassword(nP).then(() => {
-            alert("Cập nhật mật khẩu thành công!");
-            showPage('create-page');
-        }).catch(e => alert("Lỗi: " + e.message));
+        if (nP.length < 6 || nP !== cP) return alert("Kiểm tra lại mật khẩu!");
+        auth.currentUser.updatePassword(nP).then(() => alert("Đã cập nhật!")).catch(e => alert(e.message));
     }
 
-    // DYNAMIC QR LOGIC
-    function getBaseUrl() { return `${window.location.protocol}//${window.location.host}${window.location.pathname.split('/').slice(0, -1).join('/')}`; }
-
+    // --- QR & SHORT LINK LOGIC ---
     async function generateQR() {
         const title = document.getElementById('qr-title').value;
         const url = document.getElementById('qr-url').value;
         const editId = document.getElementById('edit-id').value;
-        if (!title || !url) return alert("Vui lòng nhập đầy đủ!");
+        if (!title || !url) return alert("Vui lòng nhập đủ!");
         let finalId = editId;
         const data = { uid: auth.currentUser.uid, title, url, date: firebase.firestore.Timestamp.now() };
-        if (editId) { await db.collection('qrcodes').doc(editId).update(data); alert("Đã cập nhật!"); }
+        if (editId) { await db.collection('qrcodes').doc(editId).update(data); alert("Cập nhật thành công!"); }
         else { const docRef = await db.collection('qrcodes').add(data); finalId = docRef.id; }
-        const dynLink = `${getBaseUrl()}/go.html?id=${finalId}`;
-        qrcode.clear(); qrcode.makeCode(dynLink);
+        
+        // Tạo Link rút gọn cực ngắn cho QR
+        const shortUrl = getShortUrl(finalId);
+        qrcode.clear(); qrcode.makeCode(shortUrl);
         document.getElementById('qr-display').classList.remove('hidden');
         setTimeout(() => {
             const img = document.querySelector("#qrcode img").src;
@@ -302,8 +282,9 @@
         const body = document.getElementById('history-body'); body.innerHTML = "";
         snap.forEach(doc => {
             const d = doc.data();
+            const shortUrl = getShortUrl(doc.id);
             body.innerHTML += `<tr style="border-bottom:1px solid #eee;">
-                <td style="padding:15px;"><b>${d.title}</b><br><small style="color:#888; word-break:break-all;">${d.url}</small></td>
+                <td style="padding:15px;"><b>${d.title}</b><br><small style="color:var(--primary); font-weight:bold;">${shortUrl}</small><br><small style="color:#999; word-break:break-all;">Đích: ${d.url}</small></td>
                 <td style="text-align:right; min-width:100px;">
                     <button onclick="editQR('${doc.id}','${d.title}','${d.url}')" style="background:#3498db; color:white; width:40px; padding:5px; margin-bottom:5px;"><i class="fas fa-pen"></i></button>
                     <button onclick="deleteQR('${doc.id}')" style="background:#e74c3c; color:white; width:40px; padding:5px;"><i class="fas fa-trash"></i></button>
@@ -314,11 +295,11 @@
 
     function editQR(id, title, url) {
         document.getElementById('edit-id').value = id; document.getElementById('qr-title').value = title;
-        document.getElementById('qr-url').value = url; document.getElementById('form-title').innerText = "Cập Nhật";
+        document.getElementById('qr-url').value = url; document.getElementById('form-title').innerText = "Cập Nhật Link";
         document.getElementById('submit-btn').innerText = "CẬP NHẬT";
         showPage('create-page');
     }
-    async function deleteQR(id) { if(confirm("Xóa mã này?")) { await db.collection('qrcodes').doc(id).delete(); loadHistory(); } }
+    async function deleteQR(id) { if(confirm("Xóa mã?")) { await db.collection('qrcodes').doc(id).delete(); loadHistory(); } }
 
     auth.onAuthStateChanged(user => {
         if (user) {
