@@ -14,40 +14,50 @@
     <style>
         :root { --primary: #27ae60; --dark: #2c3e50; --danger: #e74c3c; --sidebar-width: 260px; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background: #f4f7f6; display: flex; min-height: 100vh; flex-direction: column; }
+        body { background: #f4f7f6; display: flex; min-height: 100vh; }
 
-        /* LOGIN ADMIN CARD */
+        /* LOGIN VIEW */
         #admin-login-view { 
+            position: fixed; inset: 0; z-index: 9999;
             display: flex; flex-direction: column; justify-content: center; align-items: center; 
-            height: 100vh; background: var(--dark); color: white; padding: 20px;
+            background: var(--dark); color: white; padding: 20px;
         }
         .admin-card { 
             background: white; padding: 40px; border-radius: 20px; width: 100%; max-width: 400px; 
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2); color: var(--dark);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2); color: var(--dark); text-align: center;
         }
         .admin-card img { width: 80px; border-radius: 50%; border: 3px solid var(--primary); margin-bottom: 20px; }
-        
         input { width: 100%; padding: 14px; margin: 10px 0; border: 1.5px solid #eee; border-radius: 10px; outline: none; }
-        input:focus { border-color: var(--primary); }
         .btn-admin-login { background: var(--primary); color: white; width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px; }
 
-        /* SIDEBAR & CONTENT (Chỉ hiện sau khi Login đúng mail) */
-        #admin-dashboard { display: none; width: 100%; min-height: 100vh; }
-        #sidebar { width: var(--sidebar-width); background: var(--dark); color: white; position: fixed; height: 100%; z-index: 1000; }
+        /* DASHBOARD LAYOUT */
+        #admin-dashboard { display: none; width: 100%; }
+        #sidebar { width: var(--sidebar-width); background: var(--dark); color: white; position: fixed; height: 100%; }
         .sidebar-header { padding: 30px 20px; text-align: center; border-bottom: 1px solid #34495e; }
-        .nav-link { padding: 15px 25px; display: block; color: #bdc3c7; text-decoration: none; cursor: pointer; }
-        .nav-link.active { background: #34495e; color: white; border-left: 5px solid var(--primary); }
+        .nav-link { padding: 15px 25px; display: block; color: #bdc3c7; text-decoration: none; cursor: pointer; transition: 0.3s; }
+        .nav-link:hover, .nav-link.active { background: #34495e; color: white; border-left: 5px solid var(--primary); }
 
-        #main-content { margin-left: var(--sidebar-width); flex: 1; padding: 30px; }
+        #main-content { margin-left: var(--sidebar-width); flex: 1; padding: 30px; width: calc(100% - var(--sidebar-width)); }
         .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 30px; }
         
+        /* TABLES */
+        .table-wrapper { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        th { background: #fafafa; color: #7f8c8d; font-size: 12px; text-transform: uppercase; }
+
+        /* BUTTONS */
+        .btn-action { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; color: white; transition: 0.2s; }
+        .btn-delete { background: var(--danger); }
+        .btn-delete:hover { background: #c0392b; }
+        .btn-lock { background: #f39c12; }
+        .btn-unlock { background: var(--primary); }
+
         .hidden { display: none !important; }
 
         @media (max-width: 768px) {
             #sidebar { display: none; }
-            #main-content { margin-left: 0; padding: 15px; }
+            #main-content { margin-left: 0; padding: 15px; width: 100%; }
         }
     </style>
 </head>
@@ -55,47 +65,58 @@
 
     <div id="admin-login-view">
         <div class="admin-card">
-            <div style="text-align: center;">
-                <img src="logo_Group.jpg" alt="Logo">
-                <h2 style="margin-bottom: 5px;">Hệ Thống Quản Trị</h2>
-                <p style="color: #888; font-size: 13px; margin-bottom: 20px;">Xác thực quyền hạn Mr. An Toàn</p>
-            </div>
-            <input type="email" id="admin-email" placeholder="Email Admin">
-            <input type="password" id="admin-pass" placeholder="Mật khẩu Admin">
-            <button class="btn-admin-login" onclick="handleAdminLogin()">VÀO HỆ THỐNG <i class="fas fa-shield-alt"></i></button>
-            <p style="text-align: center; margin-top: 15px; font-size: 12px; color: #999;">Trang này chỉ dành cho người vận hành thegioiqr.com</p>
+            <img src="logo_Group.jpg">
+            <h2 style="margin-bottom: 20px;">VDC ADMIN PANEL</h2>
+            <input type="email" id="admin-email" placeholder="Email Quản Trị">
+            <input type="password" id="admin-pass" placeholder="Mật khẩu">
+            <button class="btn-admin-login" onclick="handleAdminLogin()">ĐĂNG NHẬP HỆ THỐNG</button>
+            <p style="margin-top:15px; font-size:12px; color:#999;">Dành riêng cho thegioiqr2026@gmail.com</p>
         </div>
     </div>
 
     <div id="admin-dashboard">
         <div id="sidebar">
             <div class="sidebar-header">
-                <img src="logo_Group.jpg" style="width: 60px; border-radius: 50%;">
-                <h3 style="margin-top: 10px;">VDC ADMIN</h3>
+                <img src="logo_Group.jpg" style="width:60px; border-radius:50%;">
+                <h4 style="margin-top:10px;">MR. AN TOÀN</h4>
             </div>
-            <div class="nav-link active" onclick="showSec('config')"><i class="fas fa-cog"></i> Cấu hình</div>
-            <div class="nav-link" onclick="showSec('users')"><i class="fas fa-users"></i> Người dùng</div>
-            <div class="nav-link" onclick="logoutAdmin()" style="color: #ff7675; margin-top: 50px;"><i class="fas fa-power-off"></i> Thoát Admin</div>
+            <div class="nav-link active" onclick="showSec('config', this)"><i class="fas fa-cog"></i> Cấu hình</div>
+            <div class="nav-link" onclick="showSec('users', this)"><i class="fas fa-users"></i> Người dùng</div>
+            <div class="nav-link" onclick="showSec('qrs', this)"><i class="fas fa-qrcode"></i> Quản lý mã QR</div>
+            <div class="nav-link" onclick="logoutAdmin()" style="color:#ff7675; margin-top:50px;"><i class="fas fa-power-off"></i> Đăng xuất</div>
         </div>
 
         <div id="main-content">
             <div id="sec-config" class="admin-sec">
                 <div class="card">
-                    <h2>Thiết lập giới hạn</h2>
-                    <p style="margin-bottom: 15px; font-size: 14px; color: #666;">Số lượng mã QR tối đa người dùng được tạo.</p>
-                    Ngày: <input type="number" id="l-day" style="width: 80px;"> 
-                    Phút: <input type="number" id="l-min" style="width: 80px;">
-                    <button onclick="saveLimit()" style="background: var(--primary); color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer;">Lưu</button>
+                    <h2>Cấu hình giới hạn</h2>
+                    Giới hạn ngày: <input type="number" id="l-day" style="width:80px;"> 
+                    Giới hạn phút: <input type="number" id="l-min" style="width:80px;">
+                    <button class="btn-admin-login" style="width:auto; padding:10px 20px;" onclick="saveLimit()">Lưu cấu hình</button>
                 </div>
             </div>
 
             <div id="sec-users" class="admin-sec hidden">
                 <div class="card">
-                    <h2>Danh sách người dùng</h2>
-                    <table>
-                        <thead><tr><th>Tên/Email</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
-                        <tbody id="user-list"></tbody>
-                    </table>
+                    <h2>Danh sách tài khoản</h2>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead><tr><th>Người dùng</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
+                            <tbody id="user-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sec-qrs" class="admin-sec hidden">
+                <div class="card">
+                    <h2>Kiểm soát toàn bộ mã QR</h2>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead><tr><th>ID/Tên</th><th>Link gốc</th><th>Hành động</th></tr></thead>
+                            <tbody id="qr-list"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -116,52 +137,35 @@
 
     const ADMIN_EMAIL = "thegioiqr2026@gmail.com";
 
-    // --- HÀM ĐĂNG NHẬP ADMIN ---
     async function handleAdminLogin() {
-        const email = document.getElementById('admin-email').value;
-        const pass = document.getElementById('admin-pass').value;
-
-        if (email !== ADMIN_EMAIL) {
-            alert("❌ Bạn không có quyền truy cập trang này!");
-            window.location.href = "index.html";
-            return;
-        }
-
-        try {
-            await auth.signInWithEmailAndPassword(email, pass);
-            // Sau khi signIn thành công, auth.onAuthStateChanged sẽ tự xử lý hiện Dashboard
-        } catch (e) {
-            alert("Mật khẩu Admin không chính xác!");
-        }
+        const e = document.getElementById('admin-email').value;
+        const p = document.getElementById('admin-pass').value;
+        if(e !== ADMIN_EMAIL) return alert("Bạn không có quyền!");
+        try { await auth.signInWithEmailAndPassword(e, p); } catch(err) { alert("Sai mật khẩu!"); }
     }
 
-    // --- KIỂM SOÁT TRẠNG THÁI ---
     auth.onAuthStateChanged(user => {
         if (user && user.email === ADMIN_EMAIL) {
             document.getElementById('admin-login-view').style.display = 'none';
             document.getElementById('admin-dashboard').style.display = 'flex';
-            loadData();
+            loadConfig();
         } else {
             document.getElementById('admin-login-view').style.display = 'flex';
             document.getElementById('admin-dashboard').style.display = 'none';
-            // Nếu là user thường cố tình vào link admin, đá về index
-            if(user && user.email !== ADMIN_EMAIL) {
-                alert("Khu vực cấm!");
-                auth.signOut();
-                window.location.href = "index.html";
-            }
+            if(user) { auth.signOut(); window.location.href="index.html"; }
         }
     });
 
-    function showSec(id) {
+    function showSec(id, btn) {
         document.querySelectorAll('.admin-sec').forEach(s => s.classList.add('hidden'));
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
         document.getElementById('sec-' + id).classList.remove('hidden');
-        event.currentTarget.classList.add('active');
+        btn.classList.add('active');
         if(id === 'users') loadUsers();
+        if(id === 'qrs') loadQRs();
     }
 
-    async function loadData() {
+    async function loadConfig() {
         const doc = await db.collection('settings').doc('global_config').get();
         if(doc.exists) {
             document.getElementById('l-day').value = doc.data().limit_per_day;
@@ -173,7 +177,7 @@
         const d = parseInt(document.getElementById('l-day').value);
         const m = parseInt(document.getElementById('l-min').value);
         await db.collection('settings').doc('global_config').set({ limit_per_day: d, limit_per_min: m });
-        alert("Đã lưu giới hạn mới!");
+        alert("Đã cập nhật!");
     }
 
     function loadUsers() {
@@ -182,12 +186,12 @@
             body.innerHTML = "";
             snap.forEach(doc => {
                 const u = doc.data();
+                const isLocked = u.status === 'locked';
                 body.innerHTML += `<tr>
-                    <td>${u.name}<br><small>${u.email}</small></td>
+                    <td><b>${u.name}</b><br><small>${u.email}</small></td>
                     <td>${u.status || 'active'}</td>
-                    <td><button onclick="toggleUser('${doc.id}', '${u.status === 'locked' ? 'active' : 'locked'}')" 
-                        style="cursor:pointer; padding:5px; background:${u.status === 'locked' ? '#27ae60' : '#e74c3c'}; color:white; border:none; border-radius:5px;">
-                        ${u.status === 'locked' ? 'Mở' : 'Khóa'}
+                    <td><button onclick="toggleUser('${doc.id}', '${isLocked ? 'active' : 'locked'}')" class="btn-action ${isLocked ? 'btn-unlock' : 'btn-lock'}">
+                        ${isLocked ? 'Mở khóa' : 'Khóa'}
                     </button></td>
                 </tr>`;
             });
@@ -195,6 +199,32 @@
     }
 
     async function toggleUser(id, st) { await db.collection('users').doc(id).update({ status: st }); }
+
+    // --- CẬP NHẬT HÀM LOAD QR ĐỂ HIỆN NÚT XÓA ---
+    function loadQRs() {
+        db.collection('qrcodes').orderBy('date', 'desc').limit(100).onSnapshot(snap => {
+            const body = document.getElementById('qr-list');
+            body.innerHTML = "";
+            snap.forEach(doc => {
+                const q = doc.data();
+                body.innerHTML += `<tr>
+                    <td><b>${q.title}</b><br><small>ID: ${doc.id}</small></td>
+                    <td><small style="word-break:break-all;">${q.url}</small></td>
+                    <td>
+                        <button class="btn-action btn-delete" onclick="deleteQR('${doc.id}')">
+                            <i class="fas fa-trash"></i> Xóa
+                        </button>
+                    </td>
+                </tr>`;
+            });
+        });
+    }
+
+    async function deleteQR(id) {
+        if(confirm("Bạn có chắc chắn muốn xóa mã QR này khỏi hệ thống?")) {
+            await db.collection('qrcodes').doc(id).delete();
+        }
+    }
 
     function logoutAdmin() { auth.signOut(); }
 </script>
