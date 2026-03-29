@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Đang chuyển hướng... | Thế Giới QR</title>
+    <link rel="icon" type="image/jpeg" href="logo_Group.jpg">
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f4f7f6; margin: 0; }
+        .box { text-align: center; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .logo { width: 60px; border-radius: 50%; border: 2px solid #27ae60; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <img src="logo_Group.jpg" class="logo">
+        <div id="status">Đang tìm tài liệu...</div>
+    </div>
+
+    <script>
+        const firebaseConfig = { 
+            apiKey: "AIzaSyCjZfDgE4JFRilXh5dCtrTFLA3-BlerRNE", 
+            authDomain: "thegioiqr-2026.firebaseapp.com", 
+            projectId: "thegioiqr-2026", 
+            storageBucket: "thegioiqr-2026.firebasestorage.app", 
+            messagingSenderId: "911702916265", 
+            appId: "1:911702916265:web:d42d948ebb7e7a53dcbdb8" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Lấy phần ID sau dấu gạch chéo cuối cùng (ví dụ: /xyzabc)
+        const path = window.location.pathname.split('/').pop();
+
+        if (path && path !== "" && path !== "index.html") {
+            // Tìm trong Firebase xem có ID này không
+            db.collection('qrcodes').doc(path).get().then((doc) => {
+                if (doc.exists) {
+                    window.location.href = doc.data().url;
+                } else {
+                    document.getElementById('status').innerText = "Link rút gọn không tồn tại!";
+                    setTimeout(() => window.location.href = "index.html", 2000);
+                }
+            }).catch(() => {
+                window.location.href = "index.html";
+            });
+        } else {
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>
