@@ -139,6 +139,9 @@
     let qrcode = new QRCode(document.getElementById("qrcode"), { width: 220, height: 220 });
     let currentOTP = "";
 
+    // CẤU HÌNH GOOGLE SAFE BROWSING (THAY KEY CỦA BẠN VÀO ĐÂY)
+    const SAFE_BROWSING_KEY = "AIzaSyCjZfDgE4JFRilXh5dCtrTFLA3-BlerRNE"; // Dùng chung key Firebase nếu đã bật Safe Browsing
+
     function getShortUrl(id) { return `${window.location.protocol}//${window.location.host}/${id}`; }
     function toggleSidebar() { document.getElementById('sidebar').classList.toggle('show'); }
     function togglePass(id, icon) { const input = document.getElementById(id); input.type = (input.type === "password") ? "text" : "password"; icon.classList.toggle("fa-eye"); icon.classList.toggle("fa-eye-slash"); }
@@ -146,7 +149,6 @@
     function showPage(pageId) { document.querySelectorAll('.page').forEach(p => p.classList.add('hidden')); document.getElementById(pageId).classList.remove('hidden'); if(window.innerWidth < 768) document.getElementById('sidebar').classList.remove('show'); if(pageId==='history-page') loadHistory(); }
     function copyLink(link) { navigator.clipboard.writeText(link).then(() => alert("✅ Đã sao chép link!")); }
 
-    // CẢI TIẾN HÀM LOGIN CHO V1.29
     function login() { 
         const email = document.getElementById('login-email').value; 
         const pass = document.getElementById('login-pass').value;
@@ -156,7 +158,6 @@
 
         if(!email || !pass) return alert("Vui lòng nhập đủ Email và Mật khẩu!");
 
-        // Phản hồi UI tức thì
         btn.disabled = true;
         btn.innerText = "ĐANG XỬ LÝ...";
         progCont.style.display = 'block';
@@ -185,23 +186,67 @@
             }); 
     }
 
+    // HÀM KIỂM TRA BẢO MẬT LINK (API GOOGLE)
+    async function checkUrlSafety(targetUrl) {
+        const endpoint = `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${SAFE_BROWSING_KEY}`;
+        const body = {
+            client: { clientId: "thegioiqr-vdc", clientVersion: "1.29" },
+            threatInfo: {
+                threatTypes: ["MALWARE", "SOCIAL_ENGINEERING", "UNWANTED_SOFTWARE"],
+                platformTypes: ["ANY_PLATFORM"],
+                threatEntryTypes: ["URL"],
+                threatEntries: [{ url: targetUrl }]
+            }
+        };
+        try {
+            const response = await fetch(endpoint, { method: 'POST', body: JSON.stringify(body) });
+            const data = await response.json();
+            return !(data.matches && data.matches.length > 0);
+        } catch (e) { return true; } // Nếu lỗi API thì cho qua
+    }
+
     async function generateQR() {
-        const title = document.getElementById('qr-title').value.trim(); const url = document.getElementById('qr-url').value.trim();
+        const title = document.getElementById('qr-title').value.trim(); 
+        const url = document.getElementById('qr-url').value.trim();
         const customShort = document.getElementById('qr-short-name').value.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
         const oldId = document.getElementById('edit-id').value;
+        const submitBtn = document.getElementById('submit-btn');
+
         if (!title || !url) return alert("Vui lòng điền đủ!");
+
+        // --- BƯỚC QUÉT BẢO MẬT LINK ---
+        submitBtn.disabled = true;
+        submitBtn.innerText = "ĐANG KIỂM TRA BẢO MẬT...";
+        
+        const isSafe = await checkUrlSafety(url);
+        if (!isSafe) {
+            alert("❌ CẢNH BÁO: Link này bị Google đánh dấu là không an toàn. Hệ thống từ chối tạo mã!");
+            submitBtn.disabled = false;
+            submitBtn.innerText = "LƯU & XUẤT MÃ ĐỘNG";
+            return;
+        }
+        // ------------------------------
+
         try {
             let finalId = customShort;
             if (!oldId) {
                 if (finalId) {
                     const check = await db.collection('qrcodes').doc(finalId).get();
-                    if (check.exists) return alert("Tên rút gọn này đã có người dùng!");
+                    if (check.exists) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = "LƯU & XUẤT MÃ ĐỘNG";
+                        return alert("Tên rút gọn này đã có người dùng!");
+                    }
                     await db.collection('qrcodes').doc(finalId).set({ uid: auth.currentUser.uid, title, url, date: firebase.firestore.Timestamp.now() });
                 } else { const docRef = await db.collection('qrcodes').add({ uid: auth.currentUser.uid, title, url, date: firebase.firestore.Timestamp.now() }); finalId = docRef.id; }
             } else {
                 if (finalId && finalId !== oldId) {
                     const check = await db.collection('qrcodes').doc(finalId).get();
-                    if (check.exists) return alert("Tên mới bị trùng!");
+                    if (check.exists) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = "LƯU & XUẤT MÃ ĐỘNG";
+                        return alert("Tên mới bị trùng!");
+                    }
                     await db.collection('qrcodes').doc(finalId).set({ uid: auth.currentUser.uid, title, url, date: firebase.firestore.Timestamp.now() });
                     await db.collection('qrcodes').doc(oldId).delete();
                 } else { await db.collection('qrcodes').doc(oldId).update({ title, url }); finalId = oldId; }
@@ -220,7 +265,13 @@
                 document.getElementById('dl-btn').onclick = () => { const a = document.createElement('a'); a.href = finalCanvas.toDataURL("image/png"); a.download = `QR-${finalId}.png`; a.click(); };
             }, 800);
             alert("✅ Đã lưu thành công!");
-        } catch (e) { alert("Lỗi!"); }
+            submitBtn.disabled = false;
+            submitBtn.innerText = "LƯU & XUẤT MÃ ĐỘNG";
+        } catch (e) { 
+            alert("Lỗi!"); 
+            submitBtn.disabled = false;
+            submitBtn.innerText = "LƯU & XUẤT MÃ ĐỘNG";
+        }
     }
 
     async function loadHistory() {
@@ -269,8 +320,7 @@
             showPage('create-page');
         } else {
             document.getElementById('guest-view').classList.remove('hidden'); document.getElementById('user-view').classList.add('hidden');
-            document.getElementById('sidebar').classList.add('hide'); document.getElementById('main-content').classList.remove('remove-sidebar'); 
-            // Sửa lỗi hiển thị khi logout
+            document.getElementById('sidebar').classList.add('hide'); 
             document.getElementById('main-content').classList.remove('with-sidebar');
             document.getElementById('user-display-info').classList.add('hidden'); switchAuth('login');
         }
