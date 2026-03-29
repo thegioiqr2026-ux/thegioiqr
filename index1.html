@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thế Giới QR | Version 1.26</title>
+    <title>Thế Giới QR | Version 1.27</title>
     
     <link rel="icon" type="image/jpeg" href="logo_Group.jpg">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -30,8 +30,9 @@
         #main-content { transition: 0.3s; padding: 20px; flex: 1; }
         #main-content.with-sidebar { margin-left: var(--sidebar-width); }
         .topbar { display: flex; background: white; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); justify-content: space-between; align-items: center; }
-        .auth-card { max-width: 420px; margin: 0 auto 40px; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border-top: 5px solid var(--primary); }
+        .auth-card { max-width: 420px; margin: 40px auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border-top: 5px solid var(--primary); }
         input { width: 100%; padding: 13px; margin: 8px 0; border: 1.5px solid #eee; border-radius: 10px; outline: none; }
+        input:focus { border-color: var(--primary); }
         button { padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .btn-primary { background: var(--primary); color: white; width: 100%; }
         .password-group { position: relative; width: 100%; margin: 8px 0; }
@@ -90,7 +91,7 @@
                         <div id="reg-step-2" class="hidden"><input type="text" id="reg-otp" placeholder="Mã OTP"><input type="password" id="reg-pass-final" placeholder="Mật khẩu"><button class="btn-primary" onclick="finalRegister()">HOÀN TẤT</button></div>
                         <p style="text-align:center; margin-top:15px;"><a href="javascript:void(0)" onclick="switchAuth('login')">Quay lại</a></p>
                     </div>
-                    <div id="forgot-box" class="hidden"><h2 style="text-align: center;">Khôi Phục</h2><input type="email" id="forgot-email" placeholder="Email"><button class="btn-primary" onclick="handleForgot()">GỬI LINK</button><p style="text-align:center; margin-top:15px;"><a href="javascript:void(0)" onclick="switchAuth('login')">Quay lại</a></p></div>
+                    <div id="forgot-box" class="hidden"><h2 style="text-align: center;">Khôi Phục</h2><input type="email" id="forgot-email" placeholder="Email"><button class="btn-primary" onclick="handleForgot()">GỬI LINK KHÔI PHỤC</button><p style="text-align:center; margin-top:15px;"><a href="javascript:void(0)" onclick="switchAuth('login')">Quay lại</a></p></div>
                 </div>
             </div>
 
@@ -135,11 +136,12 @@
     function showPage(pageId) { document.querySelectorAll('.page').forEach(p => p.classList.add('hidden')); document.getElementById(pageId).classList.remove('hidden'); if(window.innerWidth < 768) document.getElementById('sidebar').classList.remove('show'); if(pageId==='history-page') loadHistory(); }
     function copyLink(link) { navigator.clipboard.writeText(link).then(() => alert("✅ Đã sao chép link!")); }
 
+    // --- HÀM LOGIN ĐÃ ĐƯỢC FIX ---
     function login() { 
-        const email = document.getElementById('login-email').value; 
+        const email = document.getElementById('login-email').value.trim(); 
         const pass = document.getElementById('login-pass').value;
-        if(!email || !pass) return alert("Vui lòng nhập đủ Email và Mật khẩu!");
-        auth.signInWithEmailAndPassword(email, pass).catch(e => alert("Lỗi: " + e.message)); 
+        if(!email || !pass) return alert("Vui lòng nhập Email và Mật khẩu!");
+        auth.signInWithEmailAndPassword(email, pass).catch(e => alert("Lỗi đăng nhập: " + e.message)); 
     }
 
     async function generateQR() {
@@ -227,7 +229,8 @@
         } else {
             document.getElementById('guest-view').classList.remove('hidden'); document.getElementById('user-view').classList.add('hidden');
             document.getElementById('sidebar').classList.add('hide'); document.getElementById('main-content').classList.remove('with-sidebar');
-            document.getElementById('user-display-info').classList.add('hidden'); switchAuth('login');
+            document.getElementById('user-display-info').classList.add('hidden');
+            switchAuth('login');
         }
     });
 </script>
