@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thế Giới QR | Version 1.19</title>
+    <title>Thế Giới QR | Version 1.20</title>
     
     <link rel="icon" type="image/jpeg" href="logo_Group.jpg">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -21,10 +21,15 @@
 
         #sidebar { width: var(--sidebar-width); background: var(--dark); color: white; transition: 0.3s; position: fixed; height: 100%; z-index: 1000; }
         #sidebar.hide { transform: translateX(-100%); }
-        .sidebar-header { padding: 30px 20px; text-align: center; border-bottom: 1px solid #34495e; position: relative; }
-        .sidebar-header img { width: 70px; height: 70px; border-radius: 50%; border: 2px solid var(--primary); margin-bottom: 10px; }
-        .close-sidebar { display: none; position: absolute; right: 15px; top: 15px; font-size: 20px; cursor: pointer; color: #999; }
+        .sidebar-header { padding: 25px 20px; text-align: center; border-bottom: 1px solid #34495e; position: relative; }
+        .sidebar-header img { width: 65px; height: 65px; border-radius: 50%; border: 2px solid var(--primary); margin-bottom: 10px; }
         
+        /* CSS CHO PHẦN HIỂN THỊ TÊN NGƯỜI DÙNG */
+        .user-info-box { margin-top: 10px; padding: 5px; border-top: 1px dashed #444; padding-top: 15px; }
+        .user-name { display: block; font-weight: bold; font-size: 15px; color: var(--primary); }
+        .user-email { display: block; font-style: italic; font-size: 12px; color: #bdc3c7; margin-top: 3px; }
+
+        .close-sidebar { display: none; position: absolute; right: 15px; top: 15px; font-size: 20px; cursor: pointer; color: #999; }
         .nav-link { padding: 15px 25px; display: block; color: #bdc3c7; text-decoration: none; cursor: pointer; transition: 0.3s; }
         .nav-link:hover, .nav-link.active { background: #34495e; color: white; border-left: 5px solid var(--primary); }
 
@@ -34,7 +39,6 @@
 
         .auth-card { max-width: 420px; margin: 0 auto 40px; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border-top: 5px solid var(--primary); }
         input { width: 100%; padding: 13px; margin: 8px 0; border: 1.5px solid #eee; border-radius: 10px; outline: none; }
-        input:focus { border-color: var(--primary); }
         button { padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .btn-primary { background: var(--primary); color: white; width: 100%; }
         
@@ -50,12 +54,11 @@
         .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
         
         table { width: 100%; border-collapse: collapse; min-width: 500px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
-        th { background: #fafafa; color: #7f8c8d; font-size: 12px; text-transform: uppercase; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #f0f0f0; }
         .qr-thumb-box { width: 50px; height: 50px; background: white; border: 1px solid #eee; border-radius: 5px; padding: 2px; }
         .qr-thumb-box img { width: 100% !important; height: 100% !important; }
 
-        .btn-icon { width: 34px; height: 34px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; color: white; margin: 0 2px; border: none; cursor: pointer; transition: 0.2s; }
+        .btn-icon { width: 34px; height: 34px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; color: white; margin: 0 2px; border: none; cursor: pointer; }
         .btn-edit { background: #3498db; }
         .btn-delete { background: #e74c3c; }
         .btn-copy { background: #f39c12; }
@@ -78,7 +81,11 @@
             <i class="fas fa-times close-sidebar" onclick="toggleSidebar()"></i>
             <img src="logo_Group.jpg" alt="Logo">
             <h3>THEGIOI<span style="color:var(--primary)">QR</span></h3>
-            <small style="color:#666">Version 1.19</small>
+            
+            <div id="user-display-info" class="user-info-box hidden">
+                <span id="display-name" class="user-name">Đang tải...</span>
+                <span id="display-email" class="user-email">...</span>
+            </div>
         </div>
         <div class="nav-link active" onclick="navToCreate()"><i class="fas fa-plus-circle"></i> Tạo Mã QR</div>
         <div class="nav-link" onclick="showPage('history-page')"><i class="fas fa-history"></i> Mã QR của tôi</div>
@@ -211,15 +218,12 @@
         else { input.type = "password"; icon.classList.replace("fa-eye-slash", "fa-eye"); }
     }
     
-    // HÀM CHUYỂN ĐỔI KHUNG AUTH (ĐÃ SỬA LỖI)
     function switchAuth(type) {
         document.getElementById('login-box').classList.add('hidden');
         document.getElementById('register-box').classList.add('hidden');
         document.getElementById('forgot-box').classList.add('hidden');
         document.getElementById(type + '-box').classList.remove('hidden');
     }
-
-    function copyLink(link) { navigator.clipboard.writeText(link).then(() => alert("✅ Đã sao chép link!")); }
 
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
@@ -337,18 +341,28 @@
         showPage('create-page'); 
     }
 
-    auth.onAuthStateChanged(user => {
+    auth.onAuthStateChanged(async user => {
         if (user) {
             document.getElementById('guest-view').classList.add('hidden');
             document.getElementById('user-view').classList.remove('hidden');
             document.getElementById('sidebar').classList.remove('hide');
             document.getElementById('main-content').classList.add('with-sidebar');
+            
+            // LẤY VÀ HIỂN THỊ TÊN NGƯỜI DÙNG
+            const userDoc = await db.collection('users').doc(user.uid).get();
+            if(userDoc.exists) {
+                document.getElementById('user-display-info').classList.remove('hidden');
+                document.getElementById('display-name').innerText = "Xin chào " + userDoc.data().name;
+                document.getElementById('display-email').innerText = user.email;
+            }
+
             showPage('create-page');
         } else {
             document.getElementById('guest-view').classList.remove('hidden');
             document.getElementById('user-view').classList.add('hidden');
             document.getElementById('sidebar').classList.add('hide');
             document.getElementById('main-content').classList.remove('with-sidebar');
+            document.getElementById('user-display-info').classList.add('hidden');
             switchAuth('login');
         }
     });
