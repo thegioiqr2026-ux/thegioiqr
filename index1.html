@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thế Giới QR | Version 1.25</title>
+    <title>Thế Giới QR | Version 1.26</title>
     
     <link rel="icon" type="image/jpeg" href="logo_Group.jpg">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -135,6 +135,13 @@
     function showPage(pageId) { document.querySelectorAll('.page').forEach(p => p.classList.add('hidden')); document.getElementById(pageId).classList.remove('hidden'); if(window.innerWidth < 768) document.getElementById('sidebar').classList.remove('show'); if(pageId==='history-page') loadHistory(); }
     function copyLink(link) { navigator.clipboard.writeText(link).then(() => alert("✅ Đã sao chép link!")); }
 
+    function login() { 
+        const email = document.getElementById('login-email').value; 
+        const pass = document.getElementById('login-pass').value;
+        if(!email || !pass) return alert("Vui lòng nhập đủ Email và Mật khẩu!");
+        auth.signInWithEmailAndPassword(email, pass).catch(e => alert("Lỗi: " + e.message)); 
+    }
+
     async function generateQR() {
         const title = document.getElementById('qr-title').value.trim(); const url = document.getElementById('qr-url').value.trim();
         const customShort = document.getElementById('qr-short-name').value.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -187,9 +194,28 @@
     async function deleteQR(id) { if(confirm("Xóa?")) { await db.collection('qrcodes').doc(id).delete(); loadHistory(); } }
     async function showAccountPage() { const doc = await db.collection('users').doc(auth.currentUser.uid).get(); if(doc.exists) document.getElementById('acc-name').value = doc.data().name; showPage('settings-page'); }
     async function updateAccount() { const n = document.getElementById('acc-name').value; const p = document.getElementById('acc-pass').value; await db.collection('users').doc(auth.currentUser.uid).update({name: n}); if(p) await auth.currentUser.updatePassword(p); alert("Đã cập nhật!"); location.reload(); }
-    function login() { auth.signInWithEmailAndPassword(document.getElementById('login-email').value, document.getElementById('login-pass').value).catch(() => alert("Lỗi!")); }
     function logout() { auth.signOut(); }
     function navToCreate() { document.getElementById('edit-id').value=""; document.getElementById('qr-title').value=""; document.getElementById('qr-url').value=""; document.getElementById('qr-short-name').value=""; document.getElementById('qr-display').classList.add('hidden'); showPage('create-page'); }
+
+    function sendOTP() {
+        const email = document.getElementById('reg-email').value; const name = document.getElementById('reg-name').value;
+        if(!email || !name) return alert("Vui lòng nhập tên và email!");
+        currentOTP = Math.floor(100000 + Math.random() * 900000).toString();
+        emailjs.send("service_4eb5c0n", "template_n18elg4", { to_email: email, to_name: name, otp_code: currentOTP })
+            .then(() => { alert("Đã gửi mã OTP!"); document.getElementById('reg-step-2').classList.remove('hidden'); });
+    }
+
+    async function finalRegister() {
+        if (document.getElementById('reg-otp').value !== currentOTP) return alert("Sai mã OTP!");
+        try {
+            const email = document.getElementById('reg-email').value; const pass = document.getElementById('reg-pass-final').value;
+            const res = await auth.createUserWithEmailAndPassword(email, pass);
+            await db.collection('users').doc(res.user.uid).set({ email, name: document.getElementById('reg-name').value, status: 'active', date: firebase.firestore.Timestamp.now() });
+            alert("Đăng ký thành công!");
+        } catch (e) { alert(e.message); }
+    }
+
+    function handleForgot() { auth.sendPasswordResetEmail(document.getElementById('forgot-email').value).then(() => alert("Đã gửi link khôi phục!")); }
 
     auth.onAuthStateChanged(async user => {
         if (user) {
@@ -201,8 +227,7 @@
         } else {
             document.getElementById('guest-view').classList.remove('hidden'); document.getElementById('user-view').classList.add('hidden');
             document.getElementById('sidebar').classList.add('hide'); document.getElementById('main-content').classList.remove('with-sidebar');
-            document.getElementById('user-display-info').classList.add('hidden');
-            switchAuth('login'); // LỆNH QUAN TRỌNG ĐỂ HIỆN HỘP THOẠI LOGIN
+            document.getElementById('user-display-info').classList.add('hidden'); switchAuth('login');
         }
     });
 </script>
