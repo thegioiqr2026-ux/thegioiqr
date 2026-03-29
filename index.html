@@ -3,79 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thế Giới QR | Tạo Mã QR Chuyên Nghiệp & Miễn Phí</title>
+    <title>Thế Giới QR | Hệ Thống Tạo & Quản Lý Mã QR Thông Minh</title>
+    
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
     <style>
-        :root { --primary: #2ecc71; --dark: #2c3e50; --light: #f9f9f9; }
-        body { font-family: 'Arial', sans-serif; background: var(--light); color: var(--dark); margin: 0; }
-        .container { max-width: 800px; margin: 50px auto; background: #fff; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: var(--primary); }
-        .form-group { margin-bottom: 15px; }
-        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: var(--primary); color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 10px; }
-        button:hover { background: #27ae60; }
-        #qr-result { margin-top: 30px; text-align: center; display: none; }
-        #qrcode { display: inline-block; padding: 10px; background: #fff; border: 1px solid #eee; }
-        .history { margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px; }
-        .qr-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; align-items: center; }
+        :root { --primary: #27ae60; --dark: #2c3e50; --bg: #f0f2f5; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); margin: 0; padding: 15px; }
+        .container { max-width: 550px; margin: 30px auto; background: #fff; padding: 30px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: var(--dark); font-size: 28px; }
+        h1 span { color: var(--primary); }
+        input { width: 100%; padding: 14px; margin: 10px 0; border: 1.5px solid #eee; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+        input:focus { border-color: var(--primary); }
+        button { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; margin-top: 10px; }
+        button:hover { filter: brightness(1.1); transform: translateY(-1px); }
         .hidden { display: none; }
-        .auth-box { border: 1px dashed var(--primary); padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .step-box { border-left: 5px solid var(--primary); padding: 15px; background: #f9f9f9; border-radius: 0 10px 10px 0; margin-bottom: 15px; }
+        .qr-item { display: flex; justify-content: space-between; padding: 15px; background: #fff; border: 1px solid #eee; margin-bottom: 10px; border-radius: 10px; align-items: center; }
+        #qrcode { margin: 25px 0; text-align: center; min-height: 200px; }
+        #qrcode img { display: inline-block; padding: 10px; background: #fff; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .status-tag { font-size: 12px; color: var(--primary); font-weight: bold; background: #eafaf1; padding: 4px 10px; border-radius: 20px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1><i class="fas fa-qrcode"></i> THEGIOIQR.COM</h1>
-    <p style="text-align: center;">Tạo mã QR nhanh - Lưu trữ trọn đời</p>
+    <h1>THEGIOI<span>QR</span>.COM</h1>
 
-    <div id="auth-section" class="auth-box">
-        <div id="login-form">
-            <h3>Đăng nhập để lưu lịch sử</h3>
+    <div id="auth-section">
+        <div id="login-box">
+            <h3 style="text-align: center;">Đăng nhập thành viên</h3>
             <input type="email" id="login-email" placeholder="Email của bạn">
-            <input type="password" id="login-pass" placeholder="Mật khẩu">
-            <button onclick="login()">Đăng Nhập</button>
-            <p style="text-align: center;">Chưa có tài khoản? <a href="#" onclick="toggleAuth()">Đăng ký ngay</a></p>
+            <input type="password" id="login-password" placeholder="Mật khẩu">
+            <button onclick="login()">ĐĂNG NHẬP NGAY</button>
+            <p style="text-align: center; font-size: 14px;">Chưa có tài khoản? <a href="javascript:void(0)" onclick="showRegister()" style="color: var(--primary); font-weight: bold;">Đăng ký miễn phí</a></p>
         </div>
 
-        <div id="register-form" class="hidden">
-            <h3>Đăng ký thành viên (Active ngay)</h3>
-            <input type="text" id="reg-name" placeholder="Họ và tên">
-            <input type="email" id="reg-email" placeholder="Email nhận OTP">
-            <input type="password" id="reg-pass" placeholder="Mật khẩu mới">
-            <button onclick="register()">Đăng Ký & Nhận OTP</button>
-            <p style="text-align: center;">Đã có tài khoản? <a href="#" onclick="toggleAuth()">Đăng nhập</a></p>
+        <div id="register-box" class="hidden">
+            <h3 style="text-align: center;">Tạo tài khoản mới</h3>
+            
+            <div id="step-1" class="step-box">
+                <input type="text" id="reg-name" placeholder="Họ và tên của bạn">
+                <input type="email" id="reg-email" placeholder="Email nhận mã OTP">
+                <button id="btn-get-otp" onclick="sendOTP()"><i class="fas fa-paper-plane"></i> LẤY MÃ OTP QUA EMAIL</button>
+            </div>
+
+            <div id="step-2" class="step-box hidden">
+                <p style="font-size: 13px; color: #666;">Nhập 6 chữ số vừa gửi tới Email:</p>
+                <input type="text" id="input-otp" placeholder="Mã OTP gồm 6 số" maxlength="6">
+                <button onclick="checkOTP()">XÁC THỰC OTP</button>
+            </div>
+
+            <div id="step-3" class="step-box hidden">
+                <input type="password" id="reg-password" placeholder="Thiết lập mật khẩu đăng nhập">
+                <button onclick="finalRegister()">HOÀN TẤT & ĐĂNG KÝ</button>
+            </div>
+
+            <p style="text-align: center;"><a href="javascript:void(0)" onclick="showLogin()" style="font-size: 14px; color: #999;">Quay lại Đăng nhập</a></p>
         </div>
     </div>
 
     <div id="main-app" class="hidden">
-        <p>Chào mừng <strong id="user-display"></strong> | <a href="#" onclick="logout()">Thoát</a></p>
-        <div class="form-group">
-            <input type="text" id="qr-name" placeholder="Tên gợi nhớ (Ví dụ: Web Mr An Toàn)">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f2f5; padding-bottom: 15px; margin-bottom: 20px;">
+            <div>
+                <span class="status-tag">ACTIVE</span><br>
+                <strong id="user-name" style="font-size: 18px;"></strong>
+            </div>
+            <button onclick="logout()" style="width: auto; padding: 8px 15px; background: #f8d7da; color: #721c24; font-size: 13px;">Đăng xuất</button>
         </div>
-        <div class="form-group">
-            <input type="text" id="qr-link" placeholder="Dán link vào đây (https://...)">
-        </div>
-        <button onclick="generateQR()">TẠO MÃ QR & LƯU LẠI</button>
+        
+        <input type="text" id="qr-title" placeholder="Tên mã QR (Ví dụ: Facebook cá nhân)">
+        <input type="text" id="qr-url" placeholder="Nhập Link (https://...)">
+        <button onclick="generateQR()"><i class="fas fa-magic"></i> TẠO & LƯU MÃ QR</button>
 
-        <div id="qr-result">
-            <div id="qrcode"></div>
-            <br>
-            <button id="download-btn" style="width: auto; background: #34495e;">Tải xuống mã QR</button>
-        </div>
+        <div id="qrcode"></div>
+        <button id="btn-download" class="hidden" style="background: #34495e;"><i class="fas fa-download"></i> TẢI ẢNH QR VỀ MÁY</button>
 
-        <div class="history">
-            <h3>Mã QR đã tạo của bạn</h3>
+        <div style="margin-top: 40px;">
+            <h3 style="border-left: 4px solid var(--primary); padding-left: 10px;">Lịch sử của bạn</h3>
             <div id="qr-list"></div>
         </div>
     </div>
 </div>
 
 <script>
-    // --- CẤU HÌNH FIREBASE ---
+    // --- CẤU HÌNH CỦA MR. AN TOÀN ---
     const firebaseConfig = {
         apiKey: "AIzaSyCjZfDgE4JFRilXh5dCtrTFLA3-BlerRNE",
         authDomain: "thegioiqr-2026.firebaseapp.com",
@@ -85,22 +102,76 @@
         appId: "1:911702916265:web:d42d948ebb7e7a53dcbdb8",
         measurementId: "G-Q19JD7SBGG"
     };
-
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // --- XỬ LÝ GIAO DIỆN ---
-    function toggleAuth() {
-        document.getElementById('login-form').classList.toggle('hidden');
-        document.getElementById('register-form').classList.toggle('hidden');
+    // EMAILJS CONFIG
+    emailjs.init("KCT_RQ-xwy-9Z4u6_");
+    const SERVICE_ID = "service_4eb5c0n";
+    const TEMPLATE_ID = "template_n18elg4";
+
+    let generatedOTP = "";
+    let qrcode = new QRCode(document.getElementById("qrcode"), { width: 200, height: 200, colorDark : "#2c3e50" });
+
+    // --- ĐIỀU HƯỚNG ---
+    function showRegister() { document.getElementById('login-box').classList.add('hidden'); document.getElementById('register-box').classList.remove('hidden'); }
+    function showLogin() { document.getElementById('login-box').classList.remove('hidden'); document.getElementById('register-box').classList.add('hidden'); }
+
+    // --- XỬ LÝ ĐĂNG KÝ ---
+    function sendOTP() {
+        const email = document.getElementById('reg-email').value;
+        const name = document.getElementById('reg-name').value;
+        if (!email || !name) return alert("Vui lòng điền đủ Tên và Email!");
+
+        generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+        const params = { to_email: email, to_name: name, otp_code: generatedOTP };
+        
+        emailjs.send(SERVICE_ID, TEMPLATE_ID, params)
+            .then(() => {
+                alert("Mã OTP đã gửi thành công! Kiểm tra hộp thư (hoặc mục Spam).");
+                document.getElementById('step-2').classList.remove('hidden');
+                document.getElementById('btn-get-otp').innerText = "GỬI LẠI MÃ";
+            }, (err) => { alert("Lỗi gửi mail: " + err.text); });
+    }
+
+    function checkOTP() {
+        if (document.getElementById('input-otp').value === generatedOTP) {
+            alert("Xác thực OTP thành công!");
+            document.getElementById('step-3').classList.remove('hidden');
+            document.getElementById('step-2').classList.add('hidden');
+            document.getElementById('step-1').style.opacity = "0.4";
+            document.getElementById('step-1').style.pointerEvents = "none";
+        } else { alert("Mã OTP không đúng!"); }
+    }
+
+    async function finalRegister() {
+        const email = document.getElementById('reg-email').value;
+        const pass = document.getElementById('reg-password').value;
+        const name = document.getElementById('reg-name').value;
+        if (pass.length < 6) return alert("Mật khẩu tối thiểu 6 ký tự!");
+
+        try {
+            const res = await auth.createUserWithEmailAndPassword(email, pass);
+            await res.user.updateProfile({ displayName: name });
+            await db.collection('users').doc(res.user.uid).set({ name, email, status: 'active', createdAt: new Date() });
+            alert("Đăng ký thành công! Đang vào hệ thống...");
+        } catch (e) { alert("Lỗi: " + e.message); }
+    }
+
+    // --- ĐĂNG NHẬP & APP ---
+    async function login() {
+        const email = document.getElementById('login-email').value;
+        const pass = document.getElementById('login-password').value;
+        try { await auth.signInWithEmailAndPassword(email, pass); } 
+        catch (e) { alert("Email hoặc mật khẩu không chính xác!"); }
     }
 
     auth.onAuthStateChanged(user => {
         if (user) {
             document.getElementById('auth-section').classList.add('hidden');
             document.getElementById('main-app').classList.remove('hidden');
-            document.getElementById('user-display').innerText = user.displayName || user.email;
+            document.getElementById('user-name').innerText = user.displayName || user.email;
             loadHistory(user.uid);
         } else {
             document.getElementById('auth-section').classList.remove('hidden');
@@ -108,91 +179,43 @@
         }
     });
 
-    // --- CHỨC NĂNG ĐĂNG KÝ / ĐĂNG NHẬP ---
-    async function register() {
-        const email = document.getElementById('reg-email').value;
-        const pass = document.getElementById('reg-pass').value;
-        const name = document.getElementById('reg-name').value;
+    async function generateQR() {
+        const url = document.getElementById('qr-url').value;
+        const title = document.getElementById('qr-title').value;
+        if (!url || !title) return alert("Hãy nhập đầy đủ Tiêu đề và Link!");
 
-        try {
-            const res = await auth.createUserWithEmailAndPassword(email, pass);
-            await res.user.updateProfile({ displayName: name });
-            // Lưu trạng thái Active vào Firestore
-            await db.collection('users').doc(res.user.uid).set({
-                name: name,
-                email: email,
-                status: 'active',
-                createdAt: new Date()
-            });
-            alert("Đăng ký thành công! Trạng thái: Active");
-        } catch (error) { alert(error.message); }
+        qrcode.clear();
+        qrcode.makeCode(url);
+        document.getElementById('btn-download').classList.remove('hidden');
+        
+        await db.collection('qrcodes').add({ uid: auth.currentUser.uid, title, url, date: new Date() });
+        
+        setTimeout(() => {
+            const imgData = document.querySelector("#qrcode img").src;
+            document.getElementById('btn-download').onclick = () => {
+                const link = document.createElement('a');
+                link.href = imgData;
+                link.download = title + "-TheGioiQR.png";
+                link.click();
+            };
+        }, 600);
+        loadHistory(auth.currentUser.uid);
     }
 
-    async function login() {
-        const email = document.getElementById('login-email').value;
-        const pass = document.getElementById('login-pass').value;
-        try {
-            await auth.signInWithEmailAndPassword(email, pass);
-        } catch (error) { alert("Sai thông tin đăng nhập!"); }
+    async function loadHistory(uid) {
+        const snap = await db.collection('qrcodes').where('uid', '==', uid).orderBy('date', 'desc').limit(10).get();
+        const list = document.getElementById('qr-list');
+        list.innerHTML = "";
+        snap.forEach(doc => {
+            const d = doc.data();
+            list.innerHTML += `<div class="qr-item">
+                <span><strong>${d.title}</strong><br><small style="color:#999">${d.url.substring(0,30)}...</small></span>
+                <button onclick="document.getElementById('qr-url').value='${d.url}';document.getElementById('qr-title').value='${d.title}';generateQR()" style="width:auto; padding:5px 12px; font-size:12px; background:#34495e;">Dùng lại</button>
+            </div>`;
+        });
     }
 
     function logout() { auth.signOut(); }
-
-    // --- CHỨC NĂNG TẠO QR ---
-    let qrcode = new QRCode(document.getElementById("qrcode"), { width: 200, height: 200 });
-
-    async function generateQR() {
-        const link = document.getElementById('qr-link').value;
-        const name = document.getElementById('qr-name').value;
-        if(!link || !name) return alert("Vui lòng nhập đủ thông tin!");
-
-        qrcode.clear();
-        qrcode.makeCode(link);
-        document.getElementById('qr-result').style.display = 'block';
-
-        // Lưu vào Firestore
-        const user = auth.currentUser;
-        await db.collection('qrcodes').add({
-            uid: user.uid,
-            name: name,
-            link: link,
-            timestamp: new Date()
-        });
-
-        // Thiết lập nút tải xuống
-        setTimeout(() => {
-            const img = document.querySelector('#qrcode img').src;
-            document.getElementById('download-btn').onclick = () => {
-                const a = document.createElement("a");
-                a.href = img;
-                a.download = name + "-QR.png";
-                a.click();
-            };
-        }, 500);
-
-        loadHistory(user.uid);
-    }
-
-    // --- TẢI LỊCH SỬ ---
-    async function loadHistory(uid) {
-        const snapshot = await db.collection('qrcodes').where('uid', '==', uid).orderBy('timestamp', 'desc').get();
-        const listDiv = document.getElementById('qr-list');
-        listDiv.innerHTML = "";
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            listDiv.innerHTML += `
-                <div class="qr-item">
-                    <span><strong>${data.name}</strong><br><small>${data.link}</small></span>
-                    <button onclick="reGen('${data.link}')" style="width:auto; padding:5px 10px; font-size:12px;">Xem lại</button>
-                </div>`;
-        });
-    }
-
-    function reGen(link) {
-        document.getElementById('qr-link').value = link;
-        generateQR();
-    }
 </script>
-
 </body>
 </html>
