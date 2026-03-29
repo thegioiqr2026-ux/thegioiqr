@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel | TheGioiQR.com</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f0f2f5; }
+        .card { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border-bottom: 1px solid #ddd; padding: 10px; text-align: left; }
+        .btn { padding: 5px 10px; cursor: pointer; border-radius: 4px; border: none; color: #fff; }
+        .btn-lock { background: #e74c3c; }
+        .btn-unlock { background: #27ae60; }
+        .btn-save { background: #2c3e50; padding: 10px 20px; }
+        input { padding: 8px; margin-right: 10px; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <h1>Quản trị Hệ thống TheGioiQR</h1>
+
+    <div class="card">
+        <h3>Cấu hình giới hạn toàn hệ thống</h3>
+        Giới hạn/Ngày: <input type="number" id="limit-day">
+        Giới hạn/Phút: <input type="number" id="limit-min">
+        <button class="btn btn-save" onclick="saveConfig()">LƯU CẤU HÌNH</button>
+    </div>
+
+    <div class="card">
+        <h3>Danh sách người dùng</h3>
+        <table id="user-table">
+            <thead><tr><th>Tên/Email</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3>Tất cả mã QR (Kiểm tra nội dung)</h3>
+        <table id="qr-table">
+            <thead><tr><th>Người tạo</th><th>Tiêu đề</th><th>Link gốc</th><th>Hành động</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+<script>
+    const firebaseConfig = { /* Dán Config của bạn vào đây */ };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Tải cấu hình
+    db.collection('settings').doc('global_config').onSnapshot(doc => {
+        const data = doc.data();
+        document.getElementById('limit-day').value = data.limit_per_day;
+        document.getElementById('limit-min').value = data.limit_per_min;
+    });
+
+    async function saveConfig() {
+        const d = parseInt(document.getElementById('limit-day').value);
+        const m = parseInt(document.getElementById('limit-min').value);
+        await db.collection('settings').doc('global_config').update({ limit_per_day: d, limit_per_min: m });
+        alert("Đã cập nhật giới hạn!");
+    }
+
+    // Tải User
+    db.collection('users').onSnapshot(snap => {
+        const tbody = document.querySelector('#user-table tbody');
+        tbody.innerHTML = "";
+        snap.forEach(doc => {
+            const u = doc.data();
+            const btnClass = u.status === 'locked' ? 'btn-unlock' : 'btn-lock';
+            const btnText = u.status === 'locked' ? 'Mở khóa' : 'Khóa TK';
+            const newStatus = u.status === 'locked' ? 'active' : 'locked';
+            
+            tbody.innerHTML += `<tr>
+                <td>${u.name}<br><small>${u.email}</small></td>
+                <td><b>${u.status}</b></td>
+                <td><button class="btn ${btnClass}" onclick="updateStatus('${doc.id}', '${newStatus}')">${btnText}</button></td>
+            </tr>`;
+        });
+    });
+
+    async function updateStatus(id, s) { await db.collection('users').doc(id).update({ status: s }); }
+
+    // Tải QR (Kiểm soát nội dung)
+    db.collection('qrcodes').orderBy('date', 'desc').limit(50).onSnapshot(snap => {
+        const tbody = document.querySelector('#qr-table tbody');
+        tbody.innerHTML = "";
+        snap.forEach(doc => {
+            const qr = doc.data();
+            tbody.innerHTML += `<tr>
+                <td>${qr.uid}</td>
+                <td>${qr.title}</td>
+                <td style="word-break:break-all">${qr.url}</td>
+                <td><button class="btn btn-lock" onclick="deleteQR('${doc.id}')">Xóa vi phạm</button></td>
+            </tr>`;
+        });
+    });
+
+    async function deleteQR(id) { if(confirm("Xóa mã vi phạm?")) await db.collection('qrcodes').doc(id).delete(); }
+</script>
+</body>
+</html>
