@@ -1,38 +1,281 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Đang chuyển hướng... | Thế Giới QR</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thế Giới QR | Version 1.7</title>
+    
+    <link rel="icon" type="image/jpeg" href="logo_Group.jpg">
+    <link rel="icon" href="data:,">
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        :root { --primary: #27ae60; --dark: #2c3e50; --light: #ecf0f1; --sidebar-width: 260px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background: #f4f7f6; display: flex; flex-direction: column; min-height: 100vh; }
+
+        #sidebar { width: var(--sidebar-width); background: var(--dark); color: white; transition: 0.3s; position: fixed; height: 100%; z-index: 1000; }
+        #sidebar.hide { transform: translateX(-100%); }
+        .sidebar-header { padding: 30px 20px; text-align: center; border-bottom: 1px solid #34495e; position: relative; }
+        .sidebar-header img { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--primary); margin-bottom: 10px; object-fit: cover; }
+        .close-sidebar { display: none; position: absolute; right: 15px; top: 20px; font-size: 20px; cursor: pointer; color: #999; }
+        
+        .nav-link { padding: 15px 25px; display: block; color: #bdc3c7; text-decoration: none; transition: 0.3s; cursor: pointer; font-size: 15px; }
+        .nav-link:hover, .nav-link.active { background: #34495e; color: white; border-left: 5px solid var(--primary); }
+
+        #main-content { margin-left: var(--sidebar-width); transition: 0.3s; padding: 20px; flex: 1; padding-bottom: 100px; }
+        #main-content.full { margin-left: 0; }
+        .topbar { display: none; background: white; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); justify-content: space-between; align-items: center; }
+
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); margin-bottom: 25px; }
+        .input-label { font-size: 13px; color: #7f8c8d; margin-bottom: 5px; display: block; font-weight: 600; }
+        input { width: 100%; padding: 14px; margin: 5px 0 15px 0; border: 1.5px solid #eee; border-radius: 10px; outline: none; }
+        input:focus { border-color: var(--primary); }
+        button { padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-primary { background: var(--primary); color: white; width: 100%; }
+        
+        .password-group { position: relative; margin: 10px 0; }
+        .password-group input { margin: 0; padding-right: 45px; }
+        .toggle-password { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #7f8c8d; }
+
+        .table-wrapper { overflow-x: auto; background: white; border-radius: 10px; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        th, td { padding: 12px 15px; border-bottom: 1px solid #f0f0f0; text-align: left; vertical-align: middle; }
+        th { background: #fafafa; color: #7f8c8d; font-size: 12px; text-transform: uppercase; }
+        
+        .col-info { width: 45%; }
+        .col-url { width: 35%; }
+        .col-action { width: 20%; text-align: center; }
+
+        .domain-tag { display: inline-block; padding: 4px 10px; background: #e1f5fe; color: #0288d1; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; }
+        .title-text { font-weight: bold; color: var(--dark); display: block; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        
+        .btn-icon { width: 34px; height: 34px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; color: white; margin: 0 2px; border: none; cursor: pointer; }
+        .btn-edit { background: #3498db; }
+        .btn-delete { background: #e74c3c; }
+
+        .hidden { display: none !important; }
+        footer { background: var(--dark); color: #bdc3c7; text-align: center; padding: 25px; font-size: 14px; }
+        
+        @media (max-width: 768px) {
+            #main-content { margin-left: 0; }
+            .topbar { display: flex; }
+        }
+    </style>
 </head>
 <body>
-    <div style="text-align: center; margin-top: 100px; font-family: Arial;">
-        <img src="logo_Group.jpg" style="width: 80px; border-radius: 50%;">
-        <p>Đang chuyển hướng đến tài liệu an toàn...</p>
+
+    <div id="sidebar" class="hide">
+        <div class="sidebar-header">
+            <img src="logo_Group.jpg" alt="Logo">
+            <h3>THEGIOI<span style="color:var(--primary)">QR</span></h3>
+            <span style="font-size:10px; color:#999">Version 1.7</span>
+            <i class="fas fa-times close-sidebar" onclick="toggleSidebar()"></i>
+        </div>
+        <div class="nav-link active" onclick="navToCreate()"><i class="fas fa-plus-circle"></i> Tạo Mã QR</div>
+        <div class="nav-link" onclick="showPage('history-page')"><i class="fas fa-history"></i> Mã QR của tôi</div>
+        <div class="nav-link" onclick="showPage('settings-page')"><i class="fas fa-key"></i> Đổi mật khẩu</div>
+        <div class="nav-link" onclick="logout()" style="color: #ff7675; margin-top: 30px;"><i class="fas fa-sign-out-alt"></i> Đăng Xuất</div>
     </div>
 
-    <script>
-         const firebaseConfig = { apiKey: "AIzaSyCjZfDgE4JFRilXh5dCtrTFLA3-BlerRNE", authDomain: "thegioiqr-2026.firebaseapp.com", projectId: "thegioiqr-2026", storageBucket: "thegioiqr-2026.firebasestorage.app", messagingSenderId: "911702916265", appId: "1:911702916265:web:d42d948ebb7e7a53dcbdb8" };
-      firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+    <div id="main-content" class="full">
+        <div class="topbar">
+            <i class="fas fa-bars" onclick="toggleSidebar()"></i>
+            <strong>THEGIOIQR.COM</strong>
+            <img src="logo_Group.jpg" style="width:30px; border-radius:50%;">
+        </div>
 
-        // Lấy ID từ URL (ví dụ: go.html?id=abcxyz)
-        const urlParams = new URLSearchParams(window.location.search);
-        const qrId = urlParams.get('id');
+        <div id="auth-container" class="card" style="max-width: 400px; margin: 60px auto;">
+            <h2 style="text-align: center; margin-bottom: 20px;">Đăng Nhập</h2>
+            <input type="email" id="login-email" placeholder="Email">
+            <div class="password-group"><input type="password" id="login-pass" placeholder="Mật khẩu"><i class="fas fa-eye toggle-password" onclick="togglePass('login-pass', this)"></i></div>
+            <button class="btn-primary" onclick="login()">ĐĂNG NHẬP</button>
+        </div>
 
-        if (qrId) {
-            db.collection('qrcodes').doc(qrId).get().then((doc) => {
-                if (doc.exists) {
-                    window.location.href = doc.data().url; // Chuyển hướng đến link gốc
-                } else {
-                    document.body.innerHTML = "Mã QR không tồn tại hoặc đã bị xóa.";
-                }
-            }).catch(err => {
-                console.error(err);
-                document.body.innerHTML = "Lỗi kết nối hệ thống.";
-            });
+        <div id="create-page" class="page hidden">
+            <div class="card">
+                <h2 id="form-title">Tạo Mã QR Mới</h2>
+                <input type="hidden" id="edit-id">
+                
+                <div style="margin-top: 20px;">
+                    <label class="input-label">Tên gọi nhớ (Tên hiển thị trên hệ thống)</label>
+                    <input type="text" id="qr-title" placeholder="Ví dụ: Tài liệu huấn luyện VDC">
+                    
+                    <label class="input-label">Link đích hiện tại (Nơi người dùng sẽ đến khi quét mã)</label>
+                    <input type="text" id="qr-url" placeholder="https://drive.google.com/...">
+                    
+                    <button class="btn-primary" id="submit-btn" onclick="generateQR()">LƯU & XUẤT MÃ ĐỘNG</button>
+                </div>
+                
+                <div id="qr-display" class="hidden" style="text-align:center; margin-top:25px; border-top: 2px dashed #eee; padding-top: 25px;">
+                    <p style="font-size: 13px; color: #27ae60; font-weight: bold; margin-bottom: 15px;"><i class="fas fa-check-circle"></i> Hình ảnh mã QR cho liên kết trên:</p>
+                    <div id="qrcode" style="display:inline-block; padding:15px; background:#fff; border:1px solid #ddd; border-radius: 12px;"></div>
+                    <div style="margin-top:15px;">
+                        <button id="dl-btn" style="background:#34495e; color:white; padding:12px 25px;"><i class="fas fa-download"></i> TẢI ẢNH QR VỀ MÁY</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="history-page" class="page hidden">
+            <div class="card">
+                <h2 style="margin-bottom: 15px;">Mã QR của tôi</h2>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="col-info">Tên mã</th>
+                                <th class="col-url">Nguồn đích</th>
+                                <th class="col-action">Xử lý</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="settings-page" class="page hidden">
+            <div class="card" style="max-width: 400px;">
+                <h2>Đổi Mật Khẩu</h2>
+                <div class="password-group"><input type="password" id="new-pass" placeholder="Mật khẩu mới"><i class="fas fa-eye toggle-password" onclick="togglePass('new-pass', this)"></i></div>
+                <div class="password-group"><input type="password" id="confirm-pass" placeholder="Xác nhận mật khẩu"><i class="fas fa-eye toggle-password" onclick="togglePass('confirm-pass', this)"></i></div>
+                <button class="btn-primary" style="margin-top:10px;" onclick="changePassword()">CẬP NHẬT</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>ThegioiQR.com | Version 1.7 | Mr. An toàn - 0399.496.319</footer>
+
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyCjZfDgE4JFRilXh5dCtrTFLA3-BlerRNE", authDomain: "thegioiqr-2026.firebaseapp.com", projectId: "thegioiqr-2026", storageBucket: "thegioiqr-2026.firebasestorage.app", messagingSenderId: "911702916265", appId: "1:911702916265:web:d42d948ebb7e7a53dcbdb8" };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    let qrcode = new QRCode(document.getElementById("qrcode"), { width: 220, height: 220, colorDark : "#2c3e50" });
+
+    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('show'); }
+    function togglePass(id, icon) {
+        const input = document.getElementById(id);
+        if (input.type === "password") { input.type = "text"; icon.classList.replace("fa-eye", "fa-eye-slash"); }
+        else { input.type = "password"; icon.classList.replace("fa-eye-slash", "fa-eye"); }
+    }
+    
+    function getDomain(url) {
+        try { let domain = new URL(url).hostname; return domain.startsWith('www.') ? domain.substring(4) : domain; } 
+        catch (e) { return "Link"; }
+    }
+
+    function navToCreate() { resetForm(); showPage('create-page'); }
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+        document.getElementById(pageId).classList.remove('hidden');
+        if (pageId === 'history-page') loadHistory();
+        if (window.innerWidth < 768) document.getElementById('sidebar').classList.remove('show');
+    }
+
+    function resetForm() {
+        document.getElementById('edit-id').value = ""; 
+        document.getElementById('qr-title').value = "";
+        document.getElementById('qr-url').value = ""; 
+        document.getElementById('qr-display').classList.add('hidden');
+        document.getElementById('form-title').innerText = "Tạo Mã QR Mới";
+        document.getElementById('submit-btn').innerText = "LƯU & XUẤT MÃ ĐỘNG";
+        qrcode.clear();
+    }
+
+    // --- TẠO & CẬP NHẬT ---
+    async function generateQR() {
+        const title = document.getElementById('qr-title').value;
+        const url = document.getElementById('qr-url').value;
+        const editId = document.getElementById('edit-id').value;
+        if (!title || !url) return alert("Vui lòng nhập đủ thông tin!");
+
+        let finalId = editId;
+        const data = { uid: auth.currentUser.uid, title, url, date: firebase.firestore.Timestamp.now() };
+        
+        try {
+            if (editId) {
+                await db.collection('qrcodes').doc(editId).update(data);
+                alert("✅ Cập nhật nội dung thành công!");
+            } else {
+                const docRef = await db.collection('qrcodes').add(data);
+                finalId = docRef.id;
+            }
+
+            const dynamicLink = `https://trancongdep.github.io/trancongdeppage/go.html?id=${finalId}`;
+            qrcode.clear(); 
+            qrcode.makeCode(dynamicLink);
+            document.getElementById('qr-display').classList.remove('hidden');
+
+            setTimeout(() => {
+                const img = document.querySelector("#qrcode img").src;
+                document.getElementById('dl-btn').onclick = () => {
+                    const a = document.createElement('a'); a.href = img; a.download = title + "-Dynamic.png"; a.click();
+                };
+            }, 600);
+        } catch (e) { alert("Lỗi!"); }
+    }
+
+    async function loadHistory() {
+        const snap = await db.collection('qrcodes').where('uid', '==', auth.currentUser.uid).orderBy('date', 'desc').get();
+        const body = document.getElementById('history-body'); body.innerHTML = "";
+        snap.forEach(doc => {
+            const d = doc.data();
+            const domain = getDomain(d.url);
+            body.innerHTML += `<tr>
+                <td class="col-info"><span class="title-text">${d.title}</span><small style="color:#999">${d.date.toDate().toLocaleDateString('vi-VN')}</small></td>
+                <td class="col-url"><a href="${d.url}" target="_blank" class="domain-tag">${domain}</a></td>
+                <td class="col-action">
+                    <button class="btn-icon btn-edit" onclick="editQR('${doc.id}','${d.title}','${d.url}')" title="Sửa"><i class="fas fa-pen"></i></button>
+                    <button class="btn-icon btn-delete" onclick="deleteQR('${doc.id}')" title="Xóa"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`;
+        });
+    }
+
+    // --- LOGIC KHI BẤM NÚT SỬA ---
+    function editQR(id, title, url) {
+        document.getElementById('edit-id').value = id; 
+        document.getElementById('qr-title').value = title;
+        document.getElementById('qr-url').value = url; 
+        
+        // Cập nhật giao diện trang sửa
+        document.getElementById('form-title').innerText = "Cập Nhật Thông Tin";
+        document.getElementById('submit-btn').innerText = "CẬP NHẬT";
+        
+        // Hiển thị ngay mã QR hiện tại để người dùng thấy
+        const dynamicLink = `https://trancongdep.github.io/trancongdeppage/go.html?id=${id}`;
+        qrcode.clear(); 
+        qrcode.makeCode(dynamicLink);
+        document.getElementById('qr-display').classList.remove('hidden');
+        
+        showPage('create-page');
+    }
+
+    async function deleteQR(id) { if(confirm("Xóa mã này?")) { await db.collection('qrcodes').doc(id).delete(); loadHistory(); } }
+    async function login() { const e = document.getElementById('login-email').value; const p = document.getElementById('login-pass').value; try { await auth.signInWithEmailAndPassword(e, p); } catch (e) { alert("Lỗi!"); } }
+    
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('sidebar').classList.remove('hide');
+            document.getElementById('main-content').classList.remove('full');
+            showPage('create-page');
+        } else {
+            document.getElementById('auth-container').classList.remove('hidden');
+            document.getElementById('sidebar').classList.add('hide');
+            document.getElementById('main-content').classList.add('full');
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
         }
-    </script>
+    });
+    function logout() { auth.signOut(); }
+</script>
 </body>
 </html>
