@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thế Giới QR | Version 1.0</title>
+    <title>Thế Giới QR | Version 1.1</title>
     
     <link rel="icon" type="image/jpeg" href="logo_Group.jpg">
     <link rel="icon" href="data:,">
@@ -56,6 +56,11 @@
         .hidden { display: none !important; }
         .error-text { color: #e74c3c; font-size: 12px; margin-top: -5px; margin-bottom: 10px; display: none; }
 
+        /* GUIDE STYLE */
+        .guide-step { margin-bottom: 20px; border-left: 4px solid var(--primary); padding-left: 15px; }
+        .guide-step h4 { color: var(--dark); margin-bottom: 5px; }
+        .guide-step p { color: #666; font-size: 14px; line-height: 1.6; }
+
         /* TABLE */
         table { width: 100%; border-collapse: collapse; min-width: 600px; }
         th, td { padding: 15px; border-bottom: 1px solid #f0f0f0; text-align: left; }
@@ -80,12 +85,13 @@
         <div class="sidebar-header">
             <img src="logo_Group.jpg" alt="Logo">
             <h3>THEGIOI<span style="color:var(--primary)">QR</span></h3>
-            <span class="version-tag">Version 1.0</span>
+            <span class="version-tag">Version 1.1</span>
             <i class="fas fa-times close-sidebar" onclick="toggleSidebar()"></i>
         </div>
         <div id="nav-items">
             <div class="nav-link active" onclick="navToCreate()"><i class="fas fa-plus-circle"></i> Tạo Mã QR</div>
             <div class="nav-link" onclick="showPage('history-page')"><i class="fas fa-th-list"></i> Mã QR của tôi</div>
+            <div class="nav-link" onclick="showPage('guide-page')"><i class="fas fa-book"></i> Hướng dẫn sử dụng</div>
             <div class="nav-link" onclick="showPage('settings-page')"><i class="fas fa-key"></i> Đổi mật khẩu</div>
             <div class="nav-link" onclick="logout()" style="color: #ff7675; margin-top: 30px;"><i class="fas fa-sign-out-alt"></i> Đăng Xuất</div>
         </div>
@@ -108,6 +114,7 @@
                         <i class="fas fa-eye toggle-password" onclick="togglePass('login-pass', this)"></i>
                     </div>
                     <button class="btn-primary" onclick="login()">ĐĂNG NHẬP</button>
+                    <p style="text-align: center; font-size: 12px; margin-top: 15px; color: #888;">Version 1.1</p>
                 </div>
             </div>
 
@@ -132,6 +139,30 @@
                         <thead><tr><th>Mã QR</th><th>Thông tin</th><th>Ngày tạo</th><th>Hành động</th></tr></thead>
                         <tbody id="history-body"></tbody>
                     </table>
+                </div>
+            </div>
+
+            <div id="guide-page" class="page hidden">
+                <div class="card">
+                    <h2><i class="fas fa-book-reader" style="color:var(--primary)"></i> Hướng Dẫn Sử Dụng</h2>
+                    <div style="margin-top:20px;">
+                        <div class="guide-step">
+                            <h4>1. Đăng ký & Kích hoạt</h4>
+                            <p>Tài khoản được cấp bởi Admin. Sau khi nhận tài khoản, vui lòng đăng nhập và đổi mật khẩu để bảo mật dữ liệu cá nhân.</p>
+                        </div>
+                        <div class="guide-step">
+                            <h4>2. Tạo mã QR</h4>
+                            <p>Tại menu "Tạo Mã QR", nhập tên gợi nhớ (để bạn dễ quản lý) và dán đường dẫn (Link) cần tạo mã. Hệ thống sẽ tự động tạo mã và cho phép tải ảnh về máy.</p>
+                        </div>
+                        <div class="guide-step">
+                            <h4>3. Quản lý mã QR</h4>
+                            <p>Vào mục "Mã QR của tôi" để xem danh sách các mã đã tạo. Tại đây bạn có thể "Sửa" nội dung hoặc "Xóa" các mã không còn sử dụng.</p>
+                        </div>
+                        <div class="guide-step">
+                            <h4>4. Bảo mật</h4>
+                            <p>Không cung cấp mật khẩu cho người khác. Hệ thống giới hạn tần suất tạo mã để đảm bảo tính ổn định cho cộng đồng HSE/Nhân sự.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -176,6 +207,10 @@
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
         document.getElementById(pageId).classList.remove('hidden');
+        document.querySelectorAll('.nav-link').forEach(l => {
+            l.classList.remove('active');
+            if(l.getAttribute('onclick') && l.getAttribute('onclick').includes(pageId)) l.classList.add('active');
+        });
         if (pageId === 'history-page') loadHistory();
     }
     function resetForm() {
@@ -234,7 +269,10 @@
         const conP = document.getElementById('confirm-pass').value;
         if (newP.length < 6) return alert("Tối thiểu 6 ký tự!");
         if (newP !== conP) { document.getElementById('msg-error').style.display = "block"; return; }
-        auth.currentUser.updatePassword(newP).then(() => alert("Thành công!")).catch(e => alert(e.message));
+        auth.currentUser.updatePassword(newP).then(() => {
+            alert("Đổi mật khẩu thành công!");
+            document.getElementById('msg-error').style.display = "none";
+        }).catch(e => alert(e.message));
     }
 
     auth.onAuthStateChanged(user => {
