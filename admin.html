@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Trị Tối Cao | Version 1.4</title>
+    <title>Quản Trị Tối Cao | Version 1.6</title>
     <link rel="icon" type="image/jpeg" href="logo_Group.jpg">
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
@@ -30,6 +30,8 @@
         .btn-lock { background: #f39c12; }
         .btn-unlock { background: var(--primary); }
         .hidden { display: none !important; }
+        a.table-link { color: var(--primary); font-weight: bold; text-decoration: none; }
+        a.table-link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -50,31 +52,23 @@
                 <img src="logo_Group.jpg" style="width:60px; border-radius:50%;">
                 <h4 style="margin-top:10px;">MR. AN TOÀN</h4>
             </div>
-            <div class="nav-link active" onclick="showSec('config', this)"><i class="fas fa-cog"></i> Cấu hình</div>
-            <div class="nav-link" onclick="showSec('users', this)"><i class="fas fa-users"></i> Người dùng</div>
-            <div class="nav-link" onclick="showSec('qrs', this)"><i class="fas fa-qrcode"></i> Quản lý mã QR</div>
+            <div id="nav-users" class="nav-link active" onclick="showSec('users', this)"><i class="fas fa-users"></i> Người dùng</div>
+            <div id="nav-qrs" class="nav-link" onclick="showSec('qrs', this)"><i class="fas fa-qrcode"></i> Quản lý mã QR</div>
+            <div id="nav-config" class="nav-link" onclick="showSec('config', this)"><i class="fas fa-cog"></i> Cấu hình</div>
+            
             <div class="nav-link" onclick="logoutAdmin()" style="color:#ff7675; margin-top:50px;"><i class="fas fa-power-off"></i> Thoát</div>
         </div>
 
         <div id="main-content">
-            <div id="sec-config" class="admin-sec">
-                <div class="card">
-                    <h2>Cấu hình giới hạn</h2>
-                    Ngày: <input type="number" id="l-day"> 
-                    Phút: <input type="number" id="l-min">
-                    <button onclick="saveLimit()" style="background:var(--primary); color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer;">Lưu</button>
-                </div>
-            </div>
-
-            <div id="sec-users" class="admin-sec hidden">
+            <div id="sec-users" class="admin-sec">
                 <div class="card">
                     <h2>Người dùng hệ thống</h2>
                     <div style="overflow-x: auto;">
                         <table id="userTable">
                             <thead>
                                 <tr>
-                                    <th onclick="sortTable(0)">Họ tên / Email</th>
-                                    <th onclick="sortTable(1)">Ngày đăng ký</th>
+                                    <th>Họ tên / Email</th>
+                                    <th>Ngày đăng ký</th>
                                     <th>Trạng thái</th>
                                     <th>Hành động</th>
                                 </tr>
@@ -90,10 +84,26 @@
                     <h2>Kiểm soát mã QR toàn hệ thống</h2>
                     <div style="overflow-x: auto;">
                         <table>
-                            <thead><tr><th>ID / Tiêu đề</th><th>Link đích</th><th>Hành động</th></tr></thead>
+                            <thead>
+                                <tr>
+                                    <th>ID / Tiêu đề</th>
+                                    <th>Tác giả (Email)</th>
+                                    <th>Link đích</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
                             <tbody id="qr-list"></tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+
+            <div id="sec-config" class="admin-sec hidden">
+                <div class="card">
+                    <h2>Cấu hình giới hạn</h2>
+                    Ngày: <input type="number" id="l-day"> 
+                    Phút: <input type="number" id="l-min">
+                    <button onclick="saveLimit()" style="background:var(--primary); color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer;">Lưu</button>
                 </div>
             </div>
         </div>
@@ -106,6 +116,18 @@
     const db = firebase.firestore();
     const ADMIN_EMAIL = "thegioiqr2026@gmail.com";
 
+    // Hàm định dạng ngày giờ dd/MM/yyyy HH:mm
+    function formatDateTime(date) {
+        if (!date) return "29/03/2026 12:00";
+        let d = date instanceof Date ? date : date.toDate();
+        let day = String(d.getDate()).padStart(2, '0');
+        let month = String(d.getMonth() + 1).padStart(2, '0');
+        let year = d.getFullYear();
+        let hour = String(d.getHours()).padStart(2, '0');
+        let min = String(d.getMinutes()).padStart(2, '0');
+        return `${day}/${month}/${year} ${hour}:${min}`;
+    }
+
     async function handleAdminLogin() {
         const e = document.getElementById('admin-email').value;
         const p = document.getElementById('admin-pass').value;
@@ -117,6 +139,7 @@
         if (user && user.email === ADMIN_EMAIL) {
             document.getElementById('admin-login-view').classList.add('hidden');
             document.getElementById('admin-dashboard').classList.remove('hidden');
+            loadUsers();
             loadConfig();
         } else {
             document.getElementById('admin-login-view').classList.remove('hidden');
@@ -157,10 +180,10 @@
             snap.forEach(doc => {
                 const u = doc.data();
                 const isLocked = u.status === 'locked';
-                const regDate = u.date ? new Date(u.date.seconds * 1000).toLocaleDateString('vi-VN') : 'N/A';
+                const regDateText = formatDateTime(u.date);
                 body.innerHTML += `<tr>
                     <td><b>${u.name}</b><br><small>${u.email}</small></td>
-                    <td>${regDate}</td>
+                    <td>${regDateText}</td>
                     <td><span style="color:${isLocked?'red':'green'}">${u.status || 'active'}</span></td>
                     <td>
                         <button class="btn-action ${isLocked?'btn-unlock':'btn-lock'}" onclick="toggleUser('${doc.id}','${isLocked?'active':'locked'}')"><i class="fas fa-${isLocked?'unlock':'lock'}"></i></button>
@@ -172,16 +195,24 @@
     }
 
     function loadQRs() {
-        db.collection('qrcodes').orderBy('date', 'desc').limit(50).onSnapshot(snap => {
-            const body = document.getElementById('qr-list');
-            body.innerHTML = "";
-            snap.forEach(doc => {
-                const q = doc.data();
-                body.innerHTML += `<tr>
-                    <td><b>${q.title}</b><br><small>ID: ${doc.id}</small></td>
-                    <td><small style="word-break:break-all;">${q.url}</small></td>
-                    <td><button class="btn-action btn-delete" onclick="deleteQR('${doc.id}')"><i class="fas fa-trash"></i></button></td>
-                </tr>`;
+        // Lấy tất cả user để map Email tác giả
+        db.collection('users').get().then(userSnap => {
+            let userMap = {};
+            userSnap.forEach(uDoc => userMap[uDoc.id] = uDoc.data().email);
+
+            db.collection('qrcodes').orderBy('date', 'desc').limit(100).onSnapshot(snap => {
+                const body = document.getElementById('qr-list');
+                body.innerHTML = "";
+                snap.forEach(doc => {
+                    const q = doc.data();
+                    const authorEmail = userMap[q.uid] || "Ẩn danh";
+                    body.innerHTML += `<tr>
+                        <td><b>${q.title}</b><br><small>ID: ${doc.id}</small></td>
+                        <td>${authorEmail}</td>
+                        <td><a href="${q.url}" target="_blank" class="table-link">Mở Link <i class="fas fa-external-link-alt" style="font-size:10px"></i></a></td>
+                        <td><button class="btn-action btn-delete" onclick="deleteQR('${doc.id}')"><i class="fas fa-trash"></i></button></td>
+                    </tr>`;
+                });
             });
         });
     }
@@ -190,24 +221,6 @@
     async function deleteUser(id) { if(confirm("Xóa người dùng này?")) await db.collection('users').doc(id).delete(); }
     async function deleteQR(id) { if(confirm("Xóa mã này?")) await db.collection('qrcodes').doc(id).delete(); }
     function logoutAdmin() { auth.signOut(); }
-
-    function sortTable(n) {
-        var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
-        table = document.getElementById("userTable");
-        switching = true; dir = "asc"; 
-        while (switching) {
-            switching = false; rows = table.rows;
-            for (i = 1; i < (rows.length - 1); i++) {
-                shouldSwitch = false;
-                x = rows[i].getElementsByTagName("TD")[n];
-                y = rows[i + 1].getElementsByTagName("TD")[n];
-                if (dir == "asc") { if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) { shouldSwitch = true; break; }
-                } else if (dir == "desc") { if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) { shouldSwitch = true; break; } }
-            }
-            if (shouldSwitch) { rows[i].parentNode.insertBefore(rows[i + 1], rows[i]); switching = true; switchcount ++;
-            } else { if (switchcount == 0 && dir == "asc") { dir = "desc"; switching = true; } }
-        }
-    }
 </script>
 </body>
 </html>
