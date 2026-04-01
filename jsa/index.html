@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VDC AI PRO - Giám định An toàn</title>
+    <title>VDC JSA - AI Giám định An toàn</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -12,11 +12,11 @@
             border: 3px solid rgba(255,255,255,0.2);
             border-top: 3px solid #ffffff;
             border-radius: 50%;
-            width: 20px; height: 20px;
+            width: 24px; height: 24px;
             animation: spin 0.8s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .animate-in { animation: fadeInUp 0.4s ease-out; }
+        .result-card { animation: fadeInUp 0.5s ease-out; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -25,63 +25,64 @@
     <div class="max-w-md mx-auto">
         <header class="flex justify-between items-center mb-6 pt-2">
             <div>
-                <h1 class="text-xl font-black text-red-600 tracking-tight italic">VDC AI SAFETY</h1>
+                <h1 class="text-xl font-black text-red-600 tracking-tight italic uppercase">VDC JSA SAFETY</h1>
                 <p class="text-[9px] text-slate-500 font-bold tracking-widest uppercase">Expert: Tran Cong Dep</p>
             </div>
-            <button onclick="clearKey()" class="text-[10px] bg-slate-800 px-3 py-1 rounded-full text-slate-400 hover:text-white">
-                <i class="fas fa-sync-alt mr-1"></i> Đổi API
+            <button onclick="clearKey()" class="text-[10px] bg-slate-800 px-3 py-1 rounded-full text-slate-400">
+                <i class="fas fa-key mr-1"></i> Đổi API
             </button>
         </header>
 
         <div class="bg-slate-900 rounded-[2.5rem] p-6 shadow-2xl border border-slate-800">
             
             <div id="apiGroup" class="mb-5">
-                <label class="block text-[10px] font-bold text-slate-500 mb-2 uppercase ml-1">Cấu hình API Gemini:</label>
+                <label class="block text-[10px] font-bold text-slate-500 mb-2 uppercase ml-1">Cấu hình Google Gemini API:</label>
                 <input type="password" id="apiKey" 
                        class="w-full bg-black border border-slate-700 rounded-2xl py-3 px-4 text-xs outline-none focus:border-red-600 text-white transition-all"
-                       placeholder="Dán API Key lần đầu tại đây...">
+                       placeholder="Nhập API Key để bắt đầu...">
             </div>
 
-            <div id="dropZone" class="relative overflow-hidden border-2 border-dashed border-slate-700 rounded-[2rem] aspect-square flex flex-col items-center justify-center bg-black active:scale-95 transition-transform shadow-inner">
+            <div id="dropZone" class="relative overflow-hidden border-2 border-dashed border-slate-700 rounded-[2rem] aspect-square flex flex-col items-center justify-center bg-black active:scale-95 transition-transform">
                 <input type="file" id="imageInput" accept="image/*" capture="environment" class="hidden">
                 
                 <div id="uploadPrompt" class="text-center p-6">
-                    <div class="w-20 h-20 bg-red-600/10 rounded-full flex items-center justify-center mx-auto mb-4 shadow-[0_0_20px_rgba(220,38,38,0.2)]">
+                    <div class="w-20 h-20 bg-red-600/10 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-camera text-4xl text-red-600"></i>
                     </div>
-                    <p class="text-sm font-black tracking-wide">CHẠM ĐỂ CHỤP HÌNH</p>
-                    <p class="text-[10px] text-slate-500 mt-2 uppercase tracking-tighter">Nhận diện cấp điện áp & Khoảng cách an toàn</p>
+                    <p class="text-sm font-black tracking-wide">CHỤP HÌNH HIỆN TRƯỜNG</p>
+                    <p class="text-[10px] text-slate-500 mt-2 uppercase">Phân tích rủi ro & Khoảng cách an toàn điện</p>
                 </div>
 
                 <img id="imagePreview" src="#" class="absolute inset-0 w-full h-full object-cover hidden">
             </div>
 
-            <button onclick="startAnalysis()" id="analyzeBtn" class="w-full mt-6 bg-red-600 hover:bg-red-700 text-white font-black py-5 rounded-2xl shadow-[0_10px_20px_rgba(220,38,38,0.3)] flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50">
-                <span id="btnText">PHÂN TÍCH HIỆN TRƯỜNG</span>
+            <button onclick="startAnalysis()" id="analyzeBtn" class="w-full mt-6 bg-red-600 hover:bg-red-700 text-white font-black py-5 rounded-2xl shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95">
+                <span id="btnText">PHÂN TÍCH JSA</span>
                 <div id="spinner" class="loading-spinner hidden"></div>
             </button>
         </div>
 
-        <div id="resultBox" class="mt-8 bg-white rounded-[2rem] p-6 shadow-2xl hidden animate-in border-t-4 border-red-600">
+        <div id="resultBox" class="mt-8 bg-white rounded-[2rem] p-6 shadow-2xl hidden result-card border-t-4 border-red-600">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-2 text-red-600">
                     <i class="fas fa-bolt"></i>
-                    <h2 class="font-black text-xs uppercase tracking-wider italic">Kết luận Chuyên gia VDC</h2>
+                    <h2 class="font-black text-xs uppercase italic">Kết luận Chuyên gia VDC</h2>
                 </div>
-                <span class="text-[10px] font-bold bg-slate-100 px-2 py-1 rounded text-slate-400">AI Verified</span>
+                <span class="text-[9px] font-bold bg-slate-100 px-2 py-1 rounded text-slate-400 italic text-right">30/03/2026</span>
             </div>
             
             <div id="resultContent" class="text-slate-800 text-sm leading-relaxed space-y-4 font-medium"></div>
             
-            <div class="mt-8 pt-5 border-t border-slate-100">
-                <a href="tel:0399496319" class="flex items-center justify-center gap-3 w-full bg-blue-600 text-white py-4 rounded-2xl text-xs font-black shadow-lg active:scale-95 transition-all uppercase italic">
-                    <i class="fas fa-phone-alt"></i> Tư vấn Mr. An toàn VDC
+            <div class="mt-8 pt-5 border-t border-slate-100 text-center">
+                <p class="text-[10px] text-slate-400 mb-4 uppercase font-bold italic underline">⚠️ Kết quả AI chỉ mang tính chất tham khảo</p>
+                <a href="tel:0399496319" class="flex items-center justify-center gap-3 w-full bg-blue-600 text-white py-4 rounded-2xl text-xs font-black shadow-lg uppercase italic transition-all active:scale-95">
+                    <i class="fas fa-phone-alt"></i> Liên hệ Mr. An toàn VDC
                 </a>
             </div>
         </div>
 
         <footer class="mt-12 text-center pb-10">
-            <p class="text-[10px] text-slate-600 font-bold uppercase tracking-[0.3em]">thegioiqr.com | trancongdep.xyz</p>
+            <p class="text-[10px] text-slate-600 font-bold uppercase tracking-[0.3em]">thegioiqr.com | JSA AI Version 1.2</p>
         </footer>
     </div>
 
@@ -93,19 +94,18 @@
         const apiKeyInput = document.getElementById('apiKey');
         const apiGroup = document.getElementById('apiGroup');
 
-        // TỰ ĐỘNG LOAD VÀ KIỂM TRA API KEY
+        // Tự động load API Key cũ
         window.onload = () => {
-            const savedKey = localStorage.getItem('vdc_api_key_pro');
+            const savedKey = localStorage.getItem('vdc_jsa_key');
             if (savedKey) {
                 apiKeyInput.value = savedKey;
-                apiGroup.classList.add('hidden'); // Ẩn ô nhập nếu đã có key
+                apiGroup.classList.add('hidden');
             }
         }
 
-        // Xóa Key để nhập lại
         function clearKey() {
             if(confirm("Bạn muốn đổi API Key khác?")) {
-                localStorage.removeItem('vdc_api_key_pro');
+                localStorage.removeItem('vdc_jsa_key');
                 apiKeyInput.value = "";
                 apiGroup.classList.remove('hidden');
                 apiKeyInput.focus();
@@ -123,7 +123,6 @@
             }
         };
 
-        // Nén ảnh tối ưu tốc độ
         async function compressImage(file) {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -148,10 +147,9 @@
 
         async function startAnalysis() {
             const key = apiKeyInput.value.trim();
-            if(!key || !imageInput.files[0]) return alert("Vui lòng nhập API Key và chụp ảnh hiện trường!");
+            if(!key || !imageInput.files[0]) return alert("Vui lòng nhập API Key và chụp ảnh!");
 
-            // LƯU API KEY NGAY KHI NHẤN PHÂN TÍCH
-            localStorage.setItem('vdc_api_key_pro', key);
+            localStorage.setItem('vdc_jsa_key', key);
             apiGroup.classList.add('hidden');
 
             const btn = document.getElementById('analyzeBtn');
@@ -160,25 +158,33 @@
             const resultContent = document.getElementById('resultContent');
 
             btn.disabled = true;
-            document.getElementById('btnText').innerText = "ĐANG GIÁM ĐỊNH...";
+            document.getElementById('btnText').innerText = "ĐANG PHÂN TÍCH...";
             spinner.classList.remove('hidden');
             resultBox.classList.add('hidden');
 
             try {
                 const base64Img = await compressImage(imageInput.files[0]);
                 
-                const prompt = "Bạn là chuyên gia an toàn điện Trần Công Đẹp (VDC). Hãy phân tích bức ảnh này và trả lời cực ngắn gọn, súc tích: 1. Đánh giá cấp điện áp đường dây. 2. Khoảng cách an toàn theo luật VN (NĐ 14/2014). 3. Các nguy cơ vi phạm & 3 lời khuyên cấp bách.";
+                const prompt = "Bạn là chuyên gia an toàn điện Trần Công Đẹp (VDC), giải A toàn quốc. Hãy phân tích hình ảnh này và trả lời súc tích: 1. Đánh giá cấp điện áp (dựa trên sứ, xà). 2. Khoảng cách an toàn tối thiểu theo Nghị định 14/2014/NĐ-CP. 3. Các điểm vi phạm an toàn hiện có & 3 lời khuyên khắc phục ngay.";
 
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+                // ĐÃ SỬA: Đổi v1beta thành v1 để ổn định model gemini-1.5-flash
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
-                        contents: [{ parts: [{text: prompt}, {inline_data: {mime_type: "image/jpeg", data: base64Img.split(',')[1]}}] }]
+                        contents: [{ 
+                            parts: [
+                                { text: prompt },
+                                { inline_data: { mime_type: "image/jpeg", data: base64Img.split(',')[1] } }
+                            ] 
+                        }]
                     })
                 });
 
                 const data = await res.json();
+                
                 if(data.error) throw new Error(data.error.message);
+                if(!data.candidates) throw new Error("AI không nhận diện được hình ảnh này. Hãy chụp rõ hơn.");
                 
                 const text = data.candidates[0].content.parts[0].text;
                 resultContent.innerHTML = text
@@ -189,11 +195,11 @@
                 resultBox.scrollIntoView({behavior: 'smooth'});
 
             } catch (e) {
-                alert("Lỗi: " + e.message + "\n\nKiểm tra lại API Key hoặc kết nối mạng.");
+                alert("LỖI HỆ THỐNG:\n" + e.message);
                 apiGroup.classList.remove('hidden');
             } finally {
                 btn.disabled = false;
-                document.getElementById('btnText').innerText = "PHÂN TÍCH HIỆN TRƯỜNG";
+                document.getElementById('btnText').innerText = "PHÂN TÍCH JSA";
                 spinner.classList.add('hidden');
             }
         }
