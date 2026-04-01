@@ -34,7 +34,6 @@
         </header>
 
         <div class="bg-slate-900 rounded-[2.5rem] p-6 shadow-2xl border border-slate-800">
-            
             <div id="apiGroup" class="mb-5">
                 <label class="block text-[10px] font-bold text-slate-500 mb-2 uppercase ml-1">Cấu hình Google Gemini API:</label>
                 <input type="password" id="apiKey" 
@@ -42,17 +41,15 @@
                        placeholder="Nhập API Key để bắt đầu...">
             </div>
 
-            <div id="dropZone" class="relative overflow-hidden border-2 border-dashed border-slate-700 rounded-[2rem] aspect-square flex flex-col items-center justify-center bg-black active:scale-95 transition-transform">
+            <div id="dropZone" class="relative overflow-hidden border-2 border-dashed border-slate-700 rounded-[2rem] aspect-square flex flex-col items-center justify-center bg-black active:scale-95 transition-transform shadow-inner">
                 <input type="file" id="imageInput" accept="image/*" capture="environment" class="hidden">
-                
                 <div id="uploadPrompt" class="text-center p-6">
                     <div class="w-20 h-20 bg-red-600/10 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-camera text-4xl text-red-600"></i>
                     </div>
-                    <p class="text-sm font-black tracking-wide">CHỤP HÌNH HIỆN TRƯỜNG</p>
-                    <p class="text-[10px] text-slate-500 mt-2 uppercase">Phân tích rủi ro & Khoảng cách an toàn điện</p>
+                    <p class="text-sm font-black tracking-wide uppercase">Chụp hình hiện trường</p>
+                    <p class="text-[10px] text-slate-500 mt-2 uppercase italic tracking-tighter">Phân tích rủi ro & Khoảng cách an toàn</p>
                 </div>
-
                 <img id="imagePreview" src="#" class="absolute inset-0 w-full h-full object-cover hidden">
             </div>
 
@@ -68,11 +65,9 @@
                     <i class="fas fa-bolt"></i>
                     <h2 class="font-black text-xs uppercase italic">Kết luận Chuyên gia VDC</h2>
                 </div>
-                <span class="text-[9px] font-bold bg-slate-100 px-2 py-1 rounded text-slate-400 italic text-right">30/03/2026</span>
+                <span id="currentTime" class="text-[9px] font-bold bg-slate-100 px-2 py-1 rounded text-slate-400 italic text-right">02/04/2026</span>
             </div>
-            
             <div id="resultContent" class="text-slate-800 text-sm leading-relaxed space-y-4 font-medium"></div>
-            
             <div class="mt-8 pt-5 border-t border-slate-100 text-center">
                 <p class="text-[10px] text-slate-400 mb-4 uppercase font-bold italic underline">⚠️ Kết quả AI chỉ mang tính chất tham khảo</p>
                 <a href="tel:0399496319" class="flex items-center justify-center gap-3 w-full bg-blue-600 text-white py-4 rounded-2xl text-xs font-black shadow-lg uppercase italic transition-all active:scale-95">
@@ -81,8 +76,8 @@
             </div>
         </div>
 
-        <footer class="mt-12 text-center pb-10">
-            <p class="text-[10px] text-slate-600 font-bold uppercase tracking-[0.3em]">thegioiqr.com | JSA AI Version 1.2</p>
+        <footer class="mt-12 text-center pb-10 text-slate-600">
+            <p class="text-[10px] font-bold uppercase tracking-[0.3em]">thegioiqr.com | JSA AI Version 1.3</p>
         </footer>
     </div>
 
@@ -94,13 +89,13 @@
         const apiKeyInput = document.getElementById('apiKey');
         const apiGroup = document.getElementById('apiGroup');
 
-        // Tự động load API Key cũ
         window.onload = () => {
             const savedKey = localStorage.getItem('vdc_jsa_key');
             if (savedKey) {
                 apiKeyInput.value = savedKey;
                 apiGroup.classList.add('hidden');
             }
+            document.getElementById('currentTime').innerText = new Date().toLocaleDateString('vi-VN');
         }
 
         function clearKey() {
@@ -164,11 +159,10 @@
 
             try {
                 const base64Img = await compressImage(imageInput.files[0]);
-                
-                const prompt = "Bạn là chuyên gia an toàn điện Trần Công Đẹp (VDC), giải A toàn quốc. Hãy phân tích hình ảnh này và trả lời súc tích: 1. Đánh giá cấp điện áp (dựa trên sứ, xà). 2. Khoảng cách an toàn tối thiểu theo Nghị định 14/2014/NĐ-CP. 3. Các điểm vi phạm an toàn hiện có & 3 lời khuyên khắc phục ngay.";
+                const prompt = "Bạn là chuyên gia an toàn điện Trần Công Đẹp (VDC), giải A toàn quốc. Phân tích hình ảnh hiện trường này và trả lời cực ngắn gọn: 1. Dự đoán cấp điện áp. 2. Khoảng cách an toàn luật định (NĐ 14/2014). 3. Nguy cơ & 3 lời khuyên cấp bách.";
 
-                // ĐÃ SỬA: Đổi v1beta thành v1 để ổn định model gemini-1.5-flash
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`, {
+                // SỬA: Dùng model gemini-1.5-flash-latest để ổn định với API v1
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${key}`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
@@ -183,8 +177,13 @@
 
                 const data = await res.json();
                 
-                if(data.error) throw new Error(data.error.message);
-                if(!data.candidates) throw new Error("AI không nhận diện được hình ảnh này. Hãy chụp rõ hơn.");
+                if(data.error) {
+                    throw new Error(data.error.message);
+                }
+                
+                if(!data.candidates || data.candidates.length === 0) {
+                    throw new Error("AI không thể phản hồi hình ảnh này. Hãy thử chụp lại rõ nét hơn.");
+                }
                 
                 const text = data.candidates[0].content.parts[0].text;
                 resultContent.innerHTML = text
