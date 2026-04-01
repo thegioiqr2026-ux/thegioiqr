@@ -3,203 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VDC AI Vision - Giám định Hiện trường</title>
+    <title>VDC JSA VISION - Offline Mode</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0"></script>
 
     <style>
-        body { font-family: -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
-        .loading-ring {
-            display: inline-block; width: 24px; height: 24px;
-            border: 3px solid rgba(255,255,255,.3); border-radius: 50%;
-            border-top-color: #fff; animation: spin 0.8s linear infinite;
-        }
+        body { font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
+        .loading-ring { border: 3px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .fade-in { animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="bg-slate-950 min-h-screen text-slate-100 p-4">
 
     <div class="max-w-md mx-auto">
-        <div id="aiStatus" class="mb-4 text-[10px] bg-slate-800 text-slate-400 px-4 py-2 rounded-full font-bold flex items-center justify-between shadow-lg">
-            <span id="statusText"><i class="fas fa-microchip mr-2"></i> Đang khởi động AI...</span>
-            <div id="statusDot" class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+        <div id="aiStatus" class="mb-4 text-[10px] bg-slate-800 text-slate-400 px-4 py-2 rounded-full font-bold flex items-center justify-between shadow-lg transition-all">
+            <span id="statusText"><i class="fas fa-wifi mr-2"></i> Đang kiểm tra bộ não AI...</span>
+            <div id="statusDot" class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
         </div>
 
         <header class="text-center mb-6">
-            <h1 class="text-2xl font-black text-red-600 italic uppercase tracking-tighter">VDC JSA VISION</h1>
-            <p class="text-[9px] text-slate-500 font-bold tracking-widest uppercase">Expert: Tran Cong Dep | Giải A Toàn Quốc</p>
+            <h1 class="text-2xl font-black text-red-600 italic uppercase italic">VDC JSA VISION</h1>
+            <p class="text-[9px] text-slate-500 font-bold tracking-widest uppercase">Expert: Tran Cong Dep | Local AI v1.2</p>
         </header>
 
-        <div class="bg-slate-900 rounded-[2.5rem] p-6 shadow-2xl border border-slate-800">
-            
-            <div id="imageArea" class="relative overflow-hidden border-2 border-dashed border-slate-700 rounded-[2rem] aspect-square flex flex-col items-center justify-center bg-black shadow-inner mb-6">
+        <div class="bg-slate-900 rounded-[2.5rem] p-5 shadow-2xl border border-slate-800">
+            <div id="imageArea" onclick="document.getElementById('cameraInput').click()" class="relative border-2 border-dashed border-slate-700 rounded-[2rem] aspect-square flex flex-col items-center justify-center bg-black mb-6 overflow-hidden active:scale-95 transition-transform cursor-pointer">
                 <img id="imagePreview" src="#" class="absolute inset-0 w-full h-full object-cover hidden rounded-[2rem]">
-                
                 <div id="uploadPrompt" class="text-center p-6">
-                    <div class="w-20 h-20 bg-red-600/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-900/30">
-                        <i class="fas fa-camera-retro text-4xl text-red-600"></i>
-                    </div>
-                    <p class="text-sm font-black uppercase italic">Chụp hoặc Chọn ảnh</p>
-                    <p class="text-[10px] text-slate-600 mt-2 uppercase font-bold tracking-tighter">AI tự nhận diện Cột, Sứ & Dây dẫn</p>
+                    <i class="fas fa-bolt text-4xl text-red-600 mb-3"></i>
+                    <p class="text-sm font-black uppercase italic">CHỤP ẢNH HIỆN TRƯỜNG</p>
+                    <p class="text-[9px] text-slate-500 mt-1 uppercase italic underline">Tự động nhận diện & Phân tích rủi ro</p>
                 </div>
             </div>
 
             <div class="grid grid-cols-2 gap-3 mb-4">
-                <button onclick="openCamera()" class="bg-slate-800 hover:bg-slate-700 py-4 rounded-2xl font-bold text-xs flex flex-col items-center gap-2 transition-all active:scale-95">
-                    <i class="fas fa-camera text-xl text-red-500"></i>
-                    CHỤP ẢNH
+                <button onclick="document.getElementById('cameraInput').click()" class="bg-slate-800 py-3 rounded-xl font-bold text-[11px] flex items-center justify-center gap-2">
+                    <i class="fas fa-camera text-red-500"></i> CHỤP ẢNH
                 </button>
-                <button onclick="openGallery()" class="bg-slate-800 hover:bg-slate-700 py-4 rounded-2xl font-bold text-xs flex flex-col items-center gap-2 transition-all active:scale-95">
-                    <i class="fas fa-images text-xl text-blue-500"></i>
-                    CHỌN TỪ MÁY
+                <button onclick="document.getElementById('galleryInput').click()" class="bg-slate-800 py-3 rounded-xl font-bold text-[11px] flex items-center justify-center gap-2">
+                    <i class="fas fa-images text-blue-500"></i> CHỌN FILE
                 </button>
             </div>
 
             <input type="file" id="cameraInput" accept="image/*" capture="environment" class="hidden">
             <input type="file" id="galleryInput" accept="image/*" class="hidden">
 
-            <button onclick="predictImage()" id="analyzeBtn" disabled class="w-full bg-red-600 hover:bg-red-700 disabled:bg-slate-800 text-white font-black py-5 rounded-2xl shadow-xl flex items-center justify-center gap-3 transition-all active:scale-95 uppercase italic tracking-wider">
-                <span id="btnText text-sm">Chờ AI sẵn sàng...</span>
+            <button onclick="predictImage()" id="analyzeBtn" disabled class="w-full bg-red-600 text-white font-black py-5 rounded-2xl shadow-xl flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-30 disabled:bg-slate-700 uppercase italic">
+                <span id="btnText">ĐANG TẢI DỮ LIỆU AI...</span>
                 <div id="spinner" class="loading-ring hidden"></div>
             </button>
         </div>
 
-        <div id="resultBox" class="mt-8 bg-white text-slate-900 rounded-[2.5rem] p-6 shadow-2xl hidden fade-in border-t-8 border-red-600">
-            <div class="flex items-center justify-between mb-5 border-b pb-3 border-slate-100">
-                <div class="flex items-center gap-2 text-red-600">
-                    <i class="fas fa-bolt text-lg"></i>
-                    <h2 class="font-black text-[13px] uppercase italic tracking-tight">Giám định Chuyên gia VDC</h2>
-                </div>
-                <span class="text-[9px] font-black bg-red-50 text-red-600 px-3 py-1 rounded-full uppercase">AI Local 1.1</span>
-            </div>
-            
-            <div id="resultContent" class="space-y-6">
-                </div>
-            
-            <div class="mt-8 pt-6 border-t border-slate-100">
-                <a href="tel:0399496319" class="flex items-center justify-center gap-3 w-full bg-blue-600 text-white py-4 rounded-2xl text-xs font-black shadow-lg uppercase italic transition-all active:scale-95">
-                    <i class="fas fa-phone-alt"></i> Liên hệ Mr. An toàn (0399.496.319)
-                </a>
-            </div>
+        <div id="resultBox" class="mt-6 bg-white text-slate-900 rounded-[2.5rem] p-6 shadow-2xl hidden border-t-8 border-red-600">
+            <div id="resultContent" class="space-y-5"></div>
+            <div class="mt-6 pt-4 border-t"><a href="tel:0399496319" class="block bg-blue-600 text-white text-center py-4 rounded-2xl text-[11px] font-black italic uppercase">📞 Gọi Mr. An Toàn VDC</a></div>
         </div>
-
-        <footer class="mt-12 text-center text-slate-700 text-[10px] uppercase font-bold tracking-[0.4em] pb-12">
-            thegioiqr.com | JSA Vision PRO
-        </footer>
     </div>
 
     <script>
         let model = null;
-        const cameraInput = document.getElementById('cameraInput');
-        const galleryInput = document.getElementById('galleryInput');
-        const preview = document.getElementById('imagePreview');
-        const uploadPrompt = document.getElementById('uploadPrompt');
-        const analyzeBtn = document.getElementById('analyzeBtn');
-        const btnText = document.getElementById('btnText');
-        const statusText = document.getElementById('statusText');
-        const statusDot = document.getElementById('statusDot');
+        const CACHE_NAME = 'vdc-ai-cache-v1';
+        const AI_FILES = [
+            'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0',
+            'https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0'
+        ];
 
-        // Hàm mở camera/gallery
-        function openCamera() { cameraInput.click(); }
-        function openGallery() { galleryInput.click(); }
-
-        // TẢI MÔ HÌNH AI
-        async function loadAIModel() {
+        // 1. TỰ ĐỘNG LƯU BỘ NÃO VÀO CACHE KHI TẢI XONG
+        async function initAI() {
             try {
+                // Tải mô hình
                 model = await mobilenet.load({version: 2, alpha: 1.0});
-                statusText.innerHTML = '<i class="fas fa-check-circle mr-2"></i> AI SẴN SÀNG (OFFLINE)';
-                statusDot.classList.replace('bg-red-500', 'bg-green-500');
-                statusDot.classList.remove('animate-pulse');
-                analyzeBtn.disabled = false;
-                btnText.innerText = "BẮT ĐẦU GIÁM ĐỊNH";
-            } catch (error) {
-                statusText.innerText = "LỖI KHỞI ĐỘNG AI!";
+                
+                // Lưu vào Cache để lần sau load tức thì
+                if ('caches' in window) {
+                    const cache = await caches.open(CACHE_NAME);
+                    await cache.addAll(AI_FILES);
+                }
+
+                document.getElementById('statusText').innerHTML = '<i class="fas fa-check-circle mr-2 text-green-500"></i> BỘ NÃO AI ĐÃ LƯU (SẴN SÀNG OFFLINE)';
+                document.getElementById('statusDot').classList.replace('bg-yellow-500', 'bg-green-500');
+                document.getElementById('statusDot').classList.remove('animate-pulse');
+                document.getElementById('analyzeBtn').disabled = false;
+                document.getElementById('btnText').innerText = "PHÂN TÍCH JSA NGAY";
+            } catch (e) {
+                document.getElementById('statusText').innerText = "LỖI: HÃY KIỂM TRA MẠNG LẦN ĐẦU";
             }
         }
-        window.onload = loadAIModel;
+        window.onload = initAI;
 
-        // Xử lý ảnh đầu vào
-        [cameraInput, galleryInput].forEach(input => {
+        // Xử lý ảnh
+        [document.getElementById('cameraInput'), document.getElementById('galleryInput')].forEach(input => {
             input.onchange = function() {
                 const [file] = this.files;
                 if (file) {
-                    preview.src = URL.createObjectURL(file);
-                    preview.classList.remove('hidden');
-                    uploadPrompt.classList.add('hidden');
+                    document.getElementById('imagePreview').src = URL.createObjectURL(file);
+                    document.getElementById('imagePreview').classList.remove('hidden');
+                    document.getElementById('uploadPrompt').classList.add('hidden');
                     document.getElementById('resultBox').classList.add('hidden');
                 }
             };
         });
 
-        // PHÂN TÍCH
         async function predictImage() {
-            if (!model || !preview.src) return;
-
-            analyzeBtn.disabled = true;
-            btnText.innerText = "AI ĐANG NHẬN DIỆN...";
+            if (!model || !document.getElementById('imagePreview').src) return;
+            document.getElementById('analyzeBtn').disabled = true;
+            document.getElementById('btnText').innerText = "AI ĐANG GIÁM ĐỊNH...";
             document.getElementById('spinner').classList.remove('hidden');
 
             try {
-                // Nhận diện vật thể trong ảnh
-                const predictions = await model.classify(preview);
-                
-                // Logic chuyên gia VDC
-                const isPole = predictions.some(p => p.className.toLowerCase().includes('pole') || p.className.toLowerCase().includes('tower'));
-                const isInsulator = predictions.some(p => p.className.toLowerCase().includes('insulator'));
+                const predictions = await model.classify(document.getElementById('imagePreview'));
+                const isPower = predictions.some(p => p.className.toLowerCase().includes('pole') || p.className.toLowerCase().includes('tower') || p.className.toLowerCase().includes('insulator'));
 
                 let html = "";
-                if (isPole || isInsulator) {
+                if (isPower) {
                     html = `
-                        <div class="bg-slate-50 p-5 rounded-3xl border-l-8 border-red-600">
-                            <p class="text-[10px] text-slate-500 uppercase font-black mb-1">Cấp điện áp dự kiến:</p>
-                            <h3 class="text-2xl font-black text-slate-900 leading-none mb-1 tracking-tighter">TRUNG THẾ 22KV-35KV</h3>
-                            <p class="text-[10px] text-red-500 font-bold italic italic uppercase tracking-tighter">AI phát hiện Cột/Sứ cách điện</p>
+                        <div class="bg-red-50 p-4 rounded-2xl border-l-4 border-red-600">
+                            <p class="text-[10px] text-red-600 font-black uppercase">Kết luận cấp điện áp:</p>
+                            <h3 class="text-xl font-black italic">TRUNG THẾ 22KV-35KV</h3>
                         </div>
-                        
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="bg-slate-100 p-4 rounded-2xl">
-                                <p class="text-[9px] text-slate-500 uppercase font-bold mb-1">Khoảng cách luật:</p>
-                                <p class="text-xl font-black text-slate-900 tracking-tighter">2.0 MÉT</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="bg-slate-50 p-3 rounded-xl border">
+                                <p class="text-[9px] font-bold text-slate-500">KHOẢNG CÁCH LUẬT:</p>
+                                <p class="text-lg font-black tracking-tighter">2.0 MÉT</p>
                             </div>
-                            <div class="bg-yellow-100 p-4 rounded-2xl border border-yellow-200">
-                                <p class="text-[9px] text-yellow-700 uppercase font-bold mb-1">Thực chiến VDC:</p>
-                                <p class="text-xl font-black text-yellow-800 tracking-tighter">> 4.0 MÉT</p>
+                            <div class="bg-yellow-50 p-3 rounded-xl border border-yellow-200">
+                                <p class="text-[9px] font-bold text-yellow-600 uppercase">VDC KHUYẾN CÁO:</p>
+                                <p class="text-lg font-black text-yellow-800 tracking-tighter">> 4.0 MÉT</p>
                             </div>
                         </div>
-
-                        <div class="bg-red-50 p-5 rounded-3xl border border-red-100">
-                            <p class="text-[10px] text-red-600 uppercase font-bold mb-3 border-b border-red-200 pb-2 italic">Hành động JSA cấp bách:</p>
-                            <ul class="text-[12px] text-slate-800 space-y-3 font-bold">
-                                <li class="flex gap-2"><i class="fas fa-check-circle text-red-500 mt-1"></i> Cô lập vùng làm việc dưới chân cột.</li>
-                                <li class="flex gap-2"><i class="fas fa-check-circle text-red-500 mt-1"></i> Bố trí người cảnh giới 100% thời gian.</li>
-                                <li class="flex gap-2"><i class="fas fa-check-circle text-red-500 mt-1"></i> Kiểm tra nối đất xe cẩu trước khi vươn cần.</li>
-                            </ul>
-                        </div>
-                    `;
+                        <ul class="text-[11px] font-bold space-y-2 bg-slate-50 p-4 rounded-xl italic">
+                            <li>🚩 Dừng cẩu nếu vi phạm khoảng cách an toàn.</li>
+                            <li>🚩 Kiểm tra nối đất vỏ xe trước khi làm việc.</li>
+                        </ul>`;
                 } else {
-                    html = `
-                        <div class="text-center p-8 bg-slate-50 rounded-[2rem]">
-                            <i class="fas fa-search text-4xl text-slate-300 mb-4"></i>
-                            <p class="font-black text-slate-800 uppercase tracking-tighter text-sm italic">AI không tìm thấy Cột/Dây/Sứ</p>
-                            <p class="text-[11px] text-slate-500 mt-2 font-medium leading-relaxed uppercase italic tracking-tighter underline">Vui lòng chụp lại đỉnh cột rõ hơn để AI giám định chính xác.</p>
-                        </div>
-                    `;
+                    html = `<p class="text-center font-bold p-10 uppercase italic">AI không nhận diện rõ Cột/Sứ.<br>Hãy chụp lại sát đỉnh cột!</p>`;
                 }
-
                 document.getElementById('resultContent').innerHTML = html;
                 document.getElementById('resultBox').classList.remove('hidden');
-                document.getElementById('resultBox').scrollIntoView({behavior: 'smooth'});
-
-            } catch (e) {
-                alert("Lỗi phân tích: " + e.message);
-            } finally {
-                analyzeBtn.disabled = false;
-                btnText.innerText = "BẮT ĐẦU GIÁM ĐỊNH";
+            } catch (e) { alert(e.message); }
+            finally {
+                document.getElementById('analyzeBtn').disabled = false;
+                document.getElementById('btnText').innerText = "PHÂN TÍCH JSA NGAY";
                 document.getElementById('spinner').classList.add('hidden');
             }
         }
