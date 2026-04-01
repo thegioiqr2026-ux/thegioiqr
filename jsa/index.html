@@ -1,1 +1,185 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VDC AI - Giám định An toàn Hiện trường</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #ef4444;
+            border-radius: 50%;
+            width: 30px; height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-900 min-h-screen text-slate-100">
 
+    <div class="max-w-xl mx-auto p-4">
+        <header class="text-center py-8">
+            <h1 class="text-3xl font-extrabold text-red-500 tracking-tighter">VDC AI SAFETY</h1>
+            <p class="text-slate-400 text-sm mt-2 font-medium">Hệ thống nhận diện rủi ro điện lưới bằng Trí tuệ nhân tạo</p>
+            <div class="mt-2 text-[10px] bg-slate-800 inline-block px-3 py-1 rounded-full text-slate-500 uppercase tracking-widest">
+                Phát triển bởi Chuyên gia Trần Công Đẹp
+            </div>
+        </header>
+
+        <section class="bg-slate-800 rounded-2xl p-6 shadow-2xl border border-slate-700">
+            
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-slate-400 mb-2 uppercase">Google Gemini API Key:</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
+                        <i class="fas fa-key"></i>
+                    </span>
+                    <input type="password" id="apiKey" 
+                           class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-10 pr-4 text-sm focus:ring-2 focus:ring-red-500 outline-none transition"
+                           placeholder="Dán mã API cá nhân của bạn...">
+                </div>
+                <p class="text-[10px] text-slate-500 mt-2 italic">*Mã API được lưu cục bộ trên trình duyệt của bạn, đảm bảo an toàn tuyệt đối.</p>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-slate-400 mb-2 uppercase">Hình ảnh hiện trường:</label>
+                <div id="dropZone" class="border-2 border-dashed border-slate-600 rounded-xl p-8 text-center hover:border-red-500 transition cursor-pointer bg-slate-900">
+                    <input type="file" id="imageInput" accept="image/*" class="hidden">
+                    <div id="previewContainer" class="hidden mb-4">
+                        <img id="imagePreview" src="#" class="max-h-48 mx-auto rounded-lg shadow-lg">
+                    </div>
+                    <div id="uploadPrompt">
+                        <i class="fas fa-camera text-3xl text-slate-500 mb-3"></i>
+                        <p class="text-sm text-slate-400">Chạm để chụp ảnh hoặc tải ảnh từ thư viện</p>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="startAnalysis()" id="analyzeBtn" 
+                    class="w-full bg-red-600 hover:bg-red-700 disabled:bg-slate-600 text-white font-bold py-4 rounded-xl transition shadow-lg flex items-center justify-center gap-3">
+                <span id="btnText">PHÂN TÍCH NGUY CƠ</span>
+                <div id="spinner" class="loading-spinner hidden"></div>
+            </button>
+
+        </section>
+
+        <div id="resultBox" class="mt-6 bg-white text-slate-900 rounded-2xl p-6 shadow-2xl hidden leading-relaxed">
+            <div class="flex items-center gap-2 mb-4 border-b pb-2">
+                <i class="fas fa-robot text-red-600"></i>
+                <h2 class="font-bold uppercase text-sm tracking-wider">Kết luận từ Chuyên gia VDC (AI)</h2>
+            </div>
+            <div id="resultContent" class="text-sm space-y-4">
+                </div>
+            
+            <div class="mt-8 pt-4 border-t border-slate-100 text-center">
+                <p class="text-[11px] text-slate-400 mb-3 italic">Bạn cần tư vấn chi tiết hơn hoặc huấn luyện tại hiện trường?</p>
+                <a href="tel:0399496319" class="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-full text-xs font-bold">
+                    <i class="fas fa-phone"></i> GỌI MR. AN TOÀN 0399.496.319
+                </a>
+            </div>
+        </div>
+
+        <footer class="mt-10 text-center text-slate-600 text-[10px] uppercase tracking-widest pb-10">
+            &copy; 2026 VDC Safety Consulting | trancongdep.xyz
+        </footer>
+    </div>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const dropZone = document.getElementById('dropZone');
+        const preview = document.getElementById('imagePreview');
+        const previewContainer = document.getElementById('previewContainer');
+        const uploadPrompt = document.getElementById('uploadPrompt');
+
+        // Xử lý sự kiện chọn ảnh
+        dropZone.onclick = () => imageInput.click();
+        
+        imageInput.onchange = function() {
+            const [file] = imageInput.files;
+            if (file) {
+                preview.src = URL.createObjectURL(file);
+                previewContainer.classList.remove('hidden');
+                uploadPrompt.classList.add('hidden');
+            }
+        };
+
+        async function startAnalysis() {
+            const apiKey = document.getElementById('apiKey').value;
+            const btnText = document.getElementById('btnText');
+            const spinner = document.getElementById('spinner');
+            const resultBox = document.getElementById('resultBox');
+            const resultContent = document.getElementById('resultContent');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+
+            if (!apiKey) return alert("Vui lòng nhập API Key!");
+            if (!imageInput.files[0]) return alert("Vui lòng tải ảnh lên!");
+
+            // Trạng thái Loading
+            analyzeBtn.disabled = true;
+            btnText.innerText = "ĐANG GIÁM ĐỊNH...";
+            spinner.classList.remove('hidden');
+            resultBox.classList.add('hidden');
+
+            const file = imageInput.files[0];
+            const base64Img = await toBase64(file);
+
+            // PROMPT CHUYÊN GIA VDC
+            const prompt = `
+                Bạn là trợ lý AI của Chuyên gia Trần Công Đẹp (Thương hiệu VDC), người đạt Giải A huấn luyện an toàn toàn quốc 2020.
+                Nhiệm vụ: Phân tích hình ảnh hiện trường xe cẩu/thiết bị làm việc gần đường dây điện.
+                Yêu cầu trả lời theo cấu trúc sau:
+                1. ĐÁNH GIÁ ĐIỆN ÁP: Dựa vào hình dáng sứ, xà, hãy dự đoán cấp điện áp (ví dụ 22kV, 110kV).
+                2. KHOẢNG CÁCH AN TOÀN: Nêu rõ khoảng cách tối thiểu theo Nghị định 14/2014/NĐ-CP cho cấp điện áp đó.
+                3. NGUY CƠ HIỆN TẠI: Chỉ ra các điểm vi phạm an toàn trong ảnh (nếu có).
+                4. LỜI KHUYÊN MR. AN TOÀN: Đưa ra 3 hành động khắc phục ngay lập tức.
+                Giọng văn: Chuyên nghiệp, nghiêm túc, ưu tiên tính mạng con người.
+            `;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: prompt },
+                                { inline_data: { mime_type: "image/jpeg", data: base64Img.split(',')[1] } }
+                            ]
+                        }]
+                    })
+                });
+
+                const data = await response.json();
+                const text = data.candidates[0].content.parts[0].text;
+                
+                // Format text và hiển thị
+                resultContent.innerHTML = text
+                    .replace(/\*\*(.*?)\*\*/g, '<b class="text-red-600">$1</b>') // Bôi đậm các tiêu đề
+                    .replace(/\n/g, '<br>');
+                
+                resultBox.classList.remove('hidden');
+                resultBox.scrollIntoView({ behavior: 'smooth' });
+
+            } catch (error) {
+                alert("Lỗi kết nối AI: " + error.message);
+            } finally {
+                analyzeBtn.disabled = false;
+                btnText.innerText = "PHÂN TÍCH NGUY CƠ";
+                spinner.classList.add('hidden');
+            }
+        }
+
+        function toBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+    </script>
+</body>
+</html>
