@@ -3,328 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thế Giới QR | Version 1.30 (Multi-Link)</title>
-    
-    <link rel="icon" type="image/jpeg" href="logo_Group.jpg">
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
+    <title>Thế Giới QR | Version 1.31</title>
     <style>
-        :root { --primary: #27ae60; --dark: #2c3e50; --light: #ecf0f1; --sidebar-width: 260px; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background: #f4f7f6; display: flex; flex-direction: column; min-height: 100vh; }
-        #sidebar { width: var(--sidebar-width); background: var(--dark); color: white; transition: 0.3s; position: fixed; height: 100%; z-index: 1000; }
-        #sidebar.hide { transform: translateX(-100%); }
-        .sidebar-header { padding: 25px 20px; text-align: center; border-bottom: 1px solid #34495e; }
-        .sidebar-header img { width: 65px; height: 65px; border-radius: 50%; border: 2px solid var(--primary); margin-bottom: 10px; }
-        .user-info-box { margin-top: 10px; padding: 15px 5px 5px; border-top: 1px dashed #444; }
-        .user-name { display: block; font-weight: bold; font-size: 14px; color: var(--primary); }
-        .user-email { display: block; font-style: italic; font-size: 11px; color: #bdc3c7; margin-top: 3px; }
-        .nav-link { padding: 15px 25px; display: block; color: #bdc3c7; text-decoration: none; cursor: pointer; transition: 0.3s; }
-        .nav-link:hover, .nav-link.active { background: #34495e; color: white; border-left: 5px solid var(--primary); }
-        
-        #main-content { transition: 0.3s; padding: 20px; flex: 1; }
-        #main-content.with-sidebar { margin-left: var(--sidebar-width); }
-        .topbar { display: flex; background: white; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); justify-content: space-between; align-items: center; }
-        
-        input, select { width: 100%; padding: 13px; margin: 8px 0; border: 1.5px solid #eee; border-radius: 10px; outline: none; }
-        button { padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .btn-primary { background: var(--primary); color: white; width: 100%; }
-
-        /* MULTI-LINK FORM v1.30 */
-        .link-item-v130 { display: flex; gap: 10px; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #eee; margin-bottom: 10px; align-items: center; }
-        .link-item-v130 input { margin: 0; }
-        .btn-del-link { color: #e74c3c; background: none; font-size: 18px; width: 30px; }
-
-        /* PLAY MODE OVERLAY */
-        #play-overlay { position: fixed; inset: 0; background: white; z-index: 9999; display: none; flex-direction: column; padding: 20px; text-align: center; }
-        .play-qr-big { width: 250px; height: 250px; margin: 20px auto; padding: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-radius: 20px; }
-        .play-select { border: 2px solid var(--primary); font-size: 18px; font-weight: bold; background: #f0fff4; }
-
-        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #f0f0f0; }
-        .qr-thumb-box { width: 50px; height: 50px; background: white; border: 1px solid #eee; border-radius: 5px; padding: 2px; cursor: pointer; }
-        .btn-icon { width: 34px; height: 34px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; color: white; margin: 0 2px; border: none; cursor: pointer; }
-        .btn-edit { background: #3498db; } .btn-delete { background: #e74c3c; } .btn-play { background: var(--primary); }
-        
-        footer { background: var(--dark); color: #bdc3c7; text-align: center; padding: 30px; font-size: 14px; margin-top: auto; }
-        .hidden { display: none !important; }
-        
-        /* Progress Bar v1.29 */
-        .progress-container-v129 { width: 100%; background: #eee; height: 5px; border-radius: 10px; margin-top: 15px; display: none; overflow: hidden; }
-        .progress-bar-v129 { width: 0%; height: 100%; background: var(--primary); transition: width 0.3s; }
-        @media (max-width: 768px) { #main-content.with-sidebar { margin-left: 0; } #sidebar { transform: translateX(-100%); } #sidebar.show { transform: translateX(0); } }
+        /* Thêm một chút CSS cho Dropdown Play Mode dễ nhìn hơn trên điện thoại */
+        .play-select { width: 100%; padding: 15px; border-radius: 30px; border: 3px solid #27ae60; font-size: 18px; font-weight: bold; background: #fff; margin-top: 15px; cursor: pointer; }
+        #play-title-display { font-size: 20px; color: #2c3e50; margin-bottom: 10px; }
     </style>
 </head>
 <body>
-
     <div id="sidebar" class="hide">
         <div class="sidebar-header">
             <img src="logo_Group.jpg" alt="Logo">
-            <h3>THEGIOI<span style="color:var(--primary)">QR</span></h3>
-            <div id="user-display-info" class="user-info-box hidden">
-                <span id="display-name" class="user-name">Đang tải...</span>
-                <span id="display-email" class="user-email">...</span>
+            <h3>THEGIOI<span style="color:#27ae60">QR</span> <small style="font-size: 10px; color: #888;">v1.31</small></h3>
             </div>
         </div>
-        <div class="nav-link active" onclick="navToCreate()"><i class="fas fa-plus-circle"></i> Tạo Mã QR</div>
-        <div class="nav-link" onclick="showPage('history-page')"><i class="fas fa-history"></i> Mã QR của tôi</div>
-        <div class="nav-link" onclick="showAccountPage()"><i class="fas fa-user-cog"></i> Tài khoản</div>
-        <div class="nav-link" onclick="logout()" style="color: #ff7675; margin-top: 30px;"><i class="fas fa-sign-out-alt"></i> Đăng Xuất</div>
-    </div>
 
     <div id="main-wrapper">
         <div id="main-content">
-            <div class="topbar"><i class="fas fa-bars" onclick="toggleSidebar()"></i><strong>THEGIOIQR.COM</strong><img src="logo_Group.jpg" style="width:30px; border-radius:50%;"></div>
-
-            <div id="guest-view">
-                <section style="text-align: center; padding: 30px 10px;"><h1>Chào mừng đến với <span style="color:var(--primary)">Thế Giới QR v1.30</span></h1></section>
-                <div class="auth-card" style="max-width: 400px; margin: 0 auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
-                    <div id="login-box">
-                        <h2 style="text-align: center; margin-bottom: 20px;">Đăng Nhập</h2>
-                        <input type="email" id="login-email" placeholder="Email">
-                        <input type="password" id="login-pass" placeholder="Mật khẩu">
-                        <button class="btn-primary" id="btn-login-v129" onclick="login()">BẮT ĐẦU NGAY</button>
-                        <div class="progress-container-v129" id="prog-cont"><div class="progress-bar-v129" id="prog-bar"></div></div>
-                        <p style="text-align: center; margin-top: 20px;"><a href="javascript:void(0)" onclick="switchAuth('register')">Đăng ký</a></p>
-                    </div>
-                    <div id="register-box" class="hidden">
-                        <h2 style="text-align: center;">Đăng Ký</h2>
-                        <div id="reg-step-1"><input type="text" id="reg-name" placeholder="Họ và tên"><input type="email" id="reg-email" placeholder="Email nhận OTP"><button class="btn-primary" onclick="sendOTP()">GỬI MÃ OTP</button></div>
-                        <div id="reg-step-2" class="hidden"><input type="text" id="reg-otp" placeholder="Mã OTP"><input type="password" id="reg-pass-final" placeholder="Mật khẩu"><button class="btn-primary" onclick="finalRegister()">HOÀN TẤT</button></div>
-                        <p style="text-align:center; margin-top:15px;"><a href="javascript:void(0)" onclick="switchAuth('login')">Quay lại</a></p>
-                    </div>
-                </div>
+            <div class="topbar">
+                <i class="fas fa-bars" onclick="toggleSidebar()"></i>
+                <strong>THEGIOIQR.COM <span style="color:#27ae60">v1.31</span></strong>
+                <img src="logo_Group.jpg" style="width:30px; border-radius:50%;">
             </div>
 
-            <div id="user-view" class="hidden">
-                <div id="create-page" class="page hidden">
-                    <div class="card">
-                        <h2 id="form-title">Tạo QR Vạn Năng</h2>
-                        <input type="hidden" id="edit-id">
-                        <input type="text" id="qr-title" placeholder="Tên bài giảng / Lớp học">
-                        
-                        <div style="margin-top: 15px;">
-                            <label style="font-weight: bold; font-size: 14px; color: #555;">Kịch bản nội dung:</label>
-                            <div id="links-container-v130">
-                                </div>
-                            <button onclick="addLinkRow()" style="background: #3498db; color: white; width: 100%; margin-top: 5px;">+ THÊM MỤC NỘI DUNG</button>
-                        </div>
-
-                        <div class="short-link-input-group" style="margin-top: 20px;"><span class="short-link-prefix">thegioiqr.com/</span><input type="text" id="qr-short-name" placeholder="ten-lop-viet-lien"></div>
-                        <button class="btn-primary" onclick="generateQR()" style="margin-top: 20px;">LƯU & KÍCH HOẠT MÃ ĐỘNG</button>
-                        
-                        <div id="qr-display" class="hidden" style="text-align:center; margin-top:20px; border-top: 1px dashed #eee; padding-top: 20px;">
-                            <div id="qrcode" style="display:inline-block; padding:15px; background:white; border:1px solid #ddd; border-radius: 12px;"></div>
-                            <br><button id="dl-btn" style="background:#34495e; color:white; margin-top:15px; padding:10px 20px;">TẢI ẢNH QR</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="history-page" class="page hidden">
-                    <div class="card">
-                        <h2>Mã QR của tôi</h2>
-                        <div style="overflow-x: auto;">
-                            <table>
-                                <thead><tr><th style="width:70px;">Mã QR</th><th>Thông tin kịch bản</th><th style="text-align:center;">Hành động</th></tr></thead>
-                                <tbody id="history-body"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
             </div>
-        </div>
-        <footer><img src="logo_Group.jpg" style="width:40px; border-radius:50%; margin-bottom:10px;"><div>Hệ thống vận hành bởi <b>Mr. An Toàn - 0399.496.319</b></div></footer>
+        <footer>
+            <img src="logo_Group.jpg" style="width:40px; border-radius:50%; margin-bottom:10px;">
+            <div>Hệ thống vận hành bởi <b>Mr. An Toàn - 0399.496.319</b></div>
+            <div style="font-size: 11px; opacity: 0.7; margin-top: 5px;">Phiên bản 1.31 (Multi-Link Enabled)</div>
+        </footer>
     </div>
 
     <div id="play-overlay">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h2 id="play-title-display">---</h2>
-            <button onclick="closePlayMode()" style="background:#e74c3c; color:white; padding:10px 20px;">ĐÓNG</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom: 15px; border-bottom: 1px solid #eee;">
+            <div style="text-align: left;">
+                <h2 id="play-title-display">Đang điều khiển...</h2>
+                <span style="color: #27ae60; font-weight: bold; font-size: 12px;">● TRỰC TIẾP</span>
+            </div>
+            <button onclick="closePlayMode()" style="background:#e74c3c; color:white; padding:10px 20px; border-radius: 10px; border:none; font-weight: bold;">ĐÓNG</button>
         </div>
-        <div id="play-qr-canvas" class="play-qr-big"></div>
-        <p style="color: #666; margin-bottom: 10px;">Quét mã để truy cập nội dung hiện tại</p>
-        <div style="max-width: 500px; margin: 0 auto;">
-            <label style="font-weight: bold; color: var(--primary);">ĐIỀU KHIỂN NỘI DUNG:</label>
+        <div id="play-qr-canvas" style="margin: 20px auto; width: 220px; height: 220px; padding: 10px; background: white; border: 1px solid #eee; border-radius: 15px;"></div>
+        <p style="color: #666; font-size: 14px;">Quét mã này để xem nội dung bạn chọn bên dưới</p>
+        <div style="max-width: 500px; margin: 25px auto;">
+            <label style="font-weight: bold; color: #27ae60; display: block; margin-bottom: 5px;">CHỌN NỘI DUNG PHÁT:</label>
             <select id="play-dropdown" class="play-select" onchange="syncPlayContent(this.value)"></select>
         </div>
     </div>
 
-<script>
-    const firebaseConfig = { apiKey: "AIzaSyCjZfDgE4JFRilXh5dCtrTFLA3-BlerRNE", authDomain: "thegioiqr-2026.firebaseapp.com", projectId: "thegioiqr-2026", storageBucket: "thegioiqr-2026.firebasestorage.app", messagingSenderId: "911702916265", appId: "1:911702916265:web:d42d948ebb7e7a53dcbdb8" };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth(); const db = firebase.firestore();
-    emailjs.init("KCT_RQ-xwy-9Z4u6_");
-    
-    let linkCount = 0;
-    let currentQRId = "";
-
-    function getShortUrl(id) { return `${window.location.protocol}//${window.location.host}/${id}`; }
-    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('show'); }
-    function showPage(pageId) { document.querySelectorAll('.page').forEach(p => p.classList.add('hidden')); document.getElementById(pageId).classList.remove('hidden'); if(pageId==='history-page') loadHistory(); }
-    
-    // LOGIN v1.29 (Giữ nguyên logic Progress Bar của bạn)
-    function login() {
-        const email = document.getElementById('login-email').value; const pass = document.getElementById('login-pass').value;
-        const btn = document.getElementById('btn-login-v129'); const progCont = document.getElementById('prog-cont'); const progBar = document.getElementById('prog-bar');
-        if(!email || !pass) return alert("Vui lòng nhập đủ!");
-        btn.disabled = true; btn.innerText = "ĐANG XỬ LÝ..."; progCont.style.display = 'block';
-        let width = 0; const interval = setInterval(() => { if(width < 90){ width += 10; progBar.style.width = width + '%'; } }, 100);
-        auth.signInWithEmailAndPassword(email, pass).then(() => { clearInterval(interval); progBar.style.width = '100%'; }).catch(e => { clearInterval(interval); btn.disabled = false; btn.innerText = "BẮT ĐẦU NGAY"; progCont.style.display = 'none'; alert(e.message); });
-    }
-
-    // MULTI-LINK LOGIC v1.30
-    function addLinkRow(label = '', url = '') {
-        linkCount++;
-        const container = document.getElementById('links-container-v130');
-        const div = document.createElement('div');
-        div.className = 'link-item-v130';
-        div.id = `link-row-${linkCount}`;
-        div.innerHTML = `
-            <input type="text" class="l-label" placeholder="Tên (VD: Bài giảng)" value="${label}" style="flex:1">
-            <input type="text" class="l-url" placeholder="Link URL" value="${url}" style="flex:2">
-            <button class="btn-del-link" onclick="removeLinkRow(${linkCount})">×</button>
-        `;
-        container.appendChild(div);
-    }
-    function removeLinkRow(id) { document.getElementById(`link-row-${id}`).remove(); }
-
-    async function generateQR() {
-        const title = document.getElementById('qr-title').value.trim();
-        const customShort = document.getElementById('qr-short-name').value.trim().toLowerCase();
-        const oldId = document.getElementById('edit-id').value;
-        
-        // Thu thập links
-        const labels = document.querySelectorAll('.l-label');
-        const urls = document.querySelectorAll('.l-url');
-        let linksArray = [];
-        labels.forEach((l, i) => { if(l.value && urls[i].value) linksArray.push({ label: l.value, url: urls[i].value }); });
-
-        if (!title || linksArray.length === 0) return alert("Vui lòng điền đủ tên và ít nhất 1 nội dung!");
-
-        try {
-            let finalId = customShort || oldId;
-            const data = { uid: auth.currentUser.uid, title, links: linksArray, active_index: 0, date: firebase.firestore.Timestamp.now() };
-
-            if (!oldId) {
-                if (finalId) {
-                    const check = await db.collection('qrcodes').doc(finalId).get();
-                    if (check.exists) return alert("Tên rút gọn này đã tồn tại!");
-                    await db.collection('qrcodes').doc(finalId).set(data);
-                } else {
-                    const docRef = await db.collection('qrcodes').add(data);
-                    finalId = docRef.id;
-                }
-            } else {
-                if (customShort && customShort !== oldId) {
-                    await db.collection('qrcodes').doc(customShort).set(data);
-                    await db.collection('qrcodes').doc(oldId).delete();
-                    finalId = customShort;
-                } else {
-                    await db.collection('qrcodes').doc(oldId).update({ title, links: linksArray });
-                }
-            }
-            alert("✅ Đã lưu kịch bản QR v1.30!");
-            showPage('history-page');
-        } catch (e) { alert("Lỗi hệ thống!"); }
-    }
-
-    async function loadHistory() {
-        const snap = await db.collection('qrcodes').where('uid', '==', auth.currentUser.uid).orderBy('date', 'desc').get();
-        const body = document.getElementById('history-body'); body.innerHTML = "";
-        snap.forEach(doc => {
-            const d = doc.data(); const sUrl = getShortUrl(doc.id);
-            const activeText = d.links ? d.links[d.active_index || 0].label : "Mã v1.x (Cần cập nhật)";
-            body.innerHTML += `
-                <tr>
-                    <td><div id="thumb-${doc.id}" class="qr-thumb-box" onclick="openPlayMode('${doc.id}')"></div></td>
-                    <td><b>${d.title}</b><br><small style="color:var(--primary);">Đang phát: ${activeText}</small></td>
-                    <td style="text-align: center;">
-                        <button class="btn-icon btn-play" onclick="openPlayMode('${doc.id}')"><i class="fas fa-play"></i></button>
-                        <button class="btn-icon btn-edit" onclick="editQR('${doc.id}')"><i class="fas fa-pen"></i></button>
-                        <button class="btn-icon btn-delete" onclick="deleteQR('${doc.id}')"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>`;
-            setTimeout(() => { new QRCode(document.getElementById(`thumb-${doc.id}`), { text: sUrl, width: 50, height: 50 }); }, 100);
-        });
-    }
-
-    // Tương thích ngược v1.x -> v1.30
-    async function editQR(id) {
-        const doc = await db.collection('qrcodes').doc(id).get();
-        const d = doc.data();
-        document.getElementById('edit-id').value = id;
-        document.getElementById('qr-title').value = d.title;
-        document.getElementById('qr-short-name').value = id;
-        document.getElementById('links-container-v130').innerHTML = "";
-        
-        if (d.links) {
-            d.links.forEach(l => addLinkRow(l.label, l.url));
-        } else if (d.url) {
-            addLinkRow("Nội dung gốc (v1)", d.url);
-        }
-        showPage('create-page');
-    }
-
-    // PLAY MODE v1.30
-    async function openPlayMode(id) {
-        currentQRId = id;
-        const doc = await db.collection('qrcodes').doc(id).get();
-        const d = doc.data();
-        document.getElementById('play-title-display').innerText = d.title;
-        document.getElementById('play-overlay').style.display = 'flex';
-        document.getElementById('play-qr-canvas').innerHTML = "";
-        new QRCode(document.getElementById('play-qr-canvas'), { text: getShortUrl(id), width: 220, height: 220 });
-        
-        const drop = document.getElementById('play-dropdown');
-        drop.innerHTML = "";
-        if (d.links) {
-            d.links.forEach((l, i) => {
-                const opt = document.createElement('option');
-                opt.value = i; opt.innerText = `${i+1}. ${l.label}`;
-                if(i == d.active_index) opt.selected = true;
-                drop.appendChild(opt);
-            });
-        }
-    }
-    function closePlayMode() { document.getElementById('play-overlay').style.display = 'none'; loadHistory(); }
-    async function syncPlayContent(idx) { await db.collection('qrcodes').doc(currentQRId).update({ active_index: parseInt(idx) }); }
-
-    function navToCreate() {
-        document.getElementById('edit-id').value = "";
-        document.getElementById('qr-title').value = "";
-        document.getElementById('qr-short-name').value = "";
-        document.getElementById('links-container-v130').innerHTML = "";
-        addLinkRow();
-        showPage('create-page');
-    }
-
-    function logout() { auth.signOut(); location.reload(); }
-
-    auth.onAuthStateChanged(async user => {
-        if (user) {
-            document.getElementById('guest-view').classList.add('hidden');
-            document.getElementById('user-view').classList.remove('hidden');
-            document.getElementById('sidebar').classList.remove('hide');
-            document.getElementById('main-content').classList.add('with-sidebar');
-            const doc = await db.collection('users').doc(user.uid).get();
-            if(doc.exists) { 
-                document.getElementById('user-display-info').classList.remove('hidden'); 
-                document.getElementById('display-name').innerText = "GV: " + doc.data().name; 
-                document.getElementById('display-email').innerText = user.email; 
-            }
-            showPage('history-page');
-        } else {
-            document.getElementById('guest-view').classList.remove('hidden');
-            document.getElementById('sidebar').classList.add('hide');
-            document.getElementById('main-content').classList.remove('with-sidebar');
-        }
-    });
-</script>
+    <script>
+        // Cập nhật nhãn hiển thị trong hàm loadHistory
+        // ... (Trong hàm loadHistory, hãy đảm bảo dòng text hiển thị v1.31)
+    </script>
 </body>
 </html>
