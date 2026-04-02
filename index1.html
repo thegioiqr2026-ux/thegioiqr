@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VDC Smart Pass 2.5 | Sửa Lỗi Hiển Thị v2.x</title>
+    <title>VDC Smart Pass 2.6 | Search & Universal Fix</title>
     
     <link rel="icon" type="image/jpeg" href="logo_Group.jpg">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -35,8 +35,14 @@
         .topbar { display: flex; background: white; padding: 12px 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
         .menu-btn { font-size: 24px; cursor: pointer; color: var(--dark); padding: 5px; }
 
+        /* SEARCH BOX */
+        .search-container { margin-bottom: 15px; position: relative; }
+        .search-input { width: 100%; padding: 12px 40px 12px 15px; border-radius: 10px; border: 1px solid #ddd; outline: none; transition: 0.3s; font-size: 14px; }
+        .search-input:focus { border-color: var(--primary); box-shadow: 0 0 8px rgba(39, 174, 96, 0.2); }
+        .search-icon { position: absolute; right: 15px; top: 12px; color: #999; }
+
         .qr-card-20 { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; display: flex; align-items: center; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-left: 5px solid var(--primary); }
-        .qr-thumb-20 { width: 80px; height: 80px; margin-right: 15px; border: 1px solid #eee; border-radius: 10px; padding: 5px; background: #fff; flex-shrink: 0; }
+        .qr-thumb-20 { width: 80px; height: 80px; margin-right: 15px; border: 1px solid #eee; border-radius: 10px; padding: 5px; background: #fff; flex-shrink: 0; cursor: pointer; }
         .qr-thumb-20 img { width: 100% !important; height: 100% !important; }
 
         .link-row-container { display: flex; gap: 10px; margin-bottom: 15px; background: #fff; padding: 12px; border: 1px solid #eee; border-radius: 12px; align-items: flex-start; }
@@ -87,7 +93,7 @@
         <div id="main-content">
             <div id="guest-view" class="hidden" style="text-align: center; padding-top: 30px;">
                 <img src="logo_Group.jpg" style="width: 80px; border-radius: 50%; margin-bottom: 15px;">
-                <h2 style="margin-bottom: 20px;">VDC Smart Pass 2.5</h2>
+                <h2 style="margin-bottom: 20px;">VDC Smart Pass 2.6</h2>
                 <div style="max-width: 350px; margin: 0 auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05);">
                     <input type="email" id="login-email" placeholder="Email" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #ddd; border-radius:8px;">
                     <input type="password" id="login-pass" placeholder="Mật khẩu" style="width:100%; padding:12px; margin-bottom:15px; border:1px solid #ddd; border-radius:8px;">
@@ -101,6 +107,12 @@
                         <h2 style="font-size: 20px;">Bài giảng của tôi</h2>
                         <button onclick="navToCreate()" style="background:var(--primary); color:white; border:none; padding:8px 12px; border-radius:8px; font-size:12px;">+ Tạo mới</button>
                     </div>
+
+                    <div class="search-container">
+                        <input type="text" id="qr-search" class="search-input" placeholder="Tìm kiếm tên bài giảng..." onkeyup="filterHistory()">
+                        <i class="fas fa-search search-icon"></i>
+                    </div>
+
                     <div id="history-list-container"></div>
                 </div>
 
@@ -112,7 +124,7 @@
                         <input type="text" id="qr-title" placeholder="Tên bài giảng..." style="width:100%; padding:12px; margin-bottom:15px; border:1px solid #ddd; border-radius:8px;">
                         
                         <div id="links-container"></div>
-                        <button onclick="addLinkRow()" style="width:100%; padding:12px; margin-top:5px; border:1px dashed var(--primary); color:var(--primary); background:#f0fff4; border-radius:10px; font-weight:bold;">+ THÊM MỤC NỘI DUNG</button>
+                        <button onclick="addLinkRow()" style="width:100%; padding:12px; margin-top:5px; border:1px dashed var(--primary); color:var(--primary); background:#f0fff4; border-radius:10px; font-weight:bold;">+ THÊM NỘI DUNG</button>
                         
                         <button onclick="saveQR()" style="width:100%; padding:15px; margin-top:25px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:bold; font-size:16px;">LƯU KỊCH BẢN</button>
                     </div>
@@ -122,7 +134,7 @@
 
         <footer>
             <b>CÔNG TY TNHH HUẤN LUYỆN AN TOÀN VDC</b><br>
-            <span style="font-size: 10px;">Version 2.5 - Sửa lỗi tương thích hoàn toàn</span>
+            <span style="font-size: 10px;">Version 2.6 - Tìm kiếm & Fix triệt để hiển thị</span>
         </footer>
     </div>
 
@@ -142,12 +154,9 @@
 
     let currentQRId = "";
     let linkCount = 0;
+    let qrDataCache = []; // Lưu trữ dữ liệu để tìm kiếm nhanh
 
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('hide');
-        document.body.classList.toggle('sidebar-hidden');
-    }
-
+    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('hide'); document.body.classList.toggle('sidebar-hidden'); }
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
         document.getElementById(pageId).classList.remove('hidden');
@@ -194,54 +203,66 @@
             if(id) await db.collection('qrcodes').doc(id).update(data);
             else await db.collection('qrcodes').add(data);
             alert("Đã lưu!"); showPage('history-page');
-        } catch(e) { alert("Lỗi lưu!"); }
+        } catch(e) { alert("Lỗi!"); }
     }
 
-    // --- LOAD HISTORY FIX TRIỆT ĐỂ (UNIVERSAL) ---
+    // --- LOAD HISTORY VỚI FIX HIỂN THỊ VÀ TÌM KIẾM ---
     async function loadHistory() {
         const snap = await db.collection('qrcodes').where('uid', '==', auth.currentUser.uid).orderBy('date', 'desc').get();
+        qrDataCache = [];
+        snap.forEach(doc => qrDataCache.push({ id: doc.id, ...doc.data() }));
+        renderList(qrDataCache);
+    }
+
+    function renderList(data) {
         const list = document.getElementById('history-list-container');
         list.innerHTML = "";
         
-        snap.forEach(doc => {
-            const d = doc.data();
-            const sUrl = `${window.location.origin}/${doc.id}`;
-            
-            // Xử lý thông tin hiển thị (Thích nghi v1 và v2)
-            let statusText = "Mã v1.x (Gốc)";
-            if (d.links && Array.isArray(d.links) && d.links.length > 0) {
-                // Ưu tiên hiển thị theo chuẩn v2
-                const idx = d.active_index || 0;
-                statusText = d.links[idx] ? d.links[idx].label : d.links[0].label;
-            }
+        data.forEach(item => {
+            try {
+                const sUrl = `${window.location.origin}/${item.id}`;
+                let statusText = "Mã v1.x (Gốc)";
+                
+                // Logic nhận diện v2 cực kỳ chặt chẽ
+                if (item.links && Array.isArray(item.links) && item.links.length > 0) {
+                    const idx = item.active_index || 0;
+                    statusText = item.links[idx] ? item.links[idx].label : item.links[0].label;
+                }
 
-            list.innerHTML += `
-                <div class="qr-card-20">
-                    <div class="qr-thumb-20" id="q-${doc.id}" onclick="openPlayMode('${doc.id}')"></div>
-                    <div style="flex:1; width:100%;">
-                        <h4 style="margin-bottom:5px;">${d.title || 'Mã QR không tên'}</h4>
-                        <p style="font-size:12px; color:var(--primary); font-weight:bold; margin-bottom:12px;">
-                            🟢 Phát: ${statusText}
-                        </p>
-                        <div style="display:flex; gap:5px;">
-                            <button class="btn-play" onclick="openPlayMode('${doc.id}')"><i class="fas fa-play"></i> PLAY</button>
-                            <button class="btn-icon btn-edit" onclick="editQR('${doc.id}')"><i class="fas fa-cog"></i></button>
-                            <button class="btn-icon btn-delete" onclick="deleteQR('${doc.id}')"><i class="fas fa-trash"></i></button>
+                list.innerHTML += `
+                    <div class="qr-card-20">
+                        <div class="qr-thumb-20" id="q-${item.id}" onclick="openPlayMode('${item.id}')"></div>
+                        <div style="flex:1; width:100%;">
+                            <h4 style="margin-bottom:5px;">${item.title || 'Mã QR không tên'}</h4>
+                            <p style="font-size:12px; color:var(--primary); font-weight:bold; margin-bottom:12px;">
+                                🟢 Đang phát: ${statusText}
+                            </p>
+                            <div style="display:flex; gap:5px;">
+                                <button class="btn-play" onclick="openPlayMode('${item.id}')"><i class="fas fa-play"></i> PLAY</button>
+                                <button class="btn-icon btn-edit" onclick="editQR('${item.id}')"><i class="fas fa-cog"></i></button>
+                                <button class="btn-icon btn-delete" onclick="deleteQR('${item.id}')"><i class="fas fa-trash"></i></button>
+                            </div>
                         </div>
-                    </div>
-                </div>`;
-            setTimeout(() => {
-                const canvas = document.getElementById(`q-${doc.id}`);
-                if(canvas) { canvas.innerHTML = ""; new QRCode(canvas, {text: sUrl, width: 70, height: 70}); }
-            }, 200);
+                    </div>`;
+                
+                setTimeout(() => {
+                    const canvas = document.getElementById(`q-${item.id}`);
+                    if(canvas) { canvas.innerHTML = ""; new QRCode(canvas, {text: sUrl, width: 70, height: 70}); }
+                }, 100);
+            } catch (err) { console.error("Lỗi thẻ:", item.id); }
         });
+    }
+
+    function filterHistory() {
+        const val = document.getElementById('qr-search').value.toLowerCase();
+        const filtered = qrDataCache.filter(item => (item.title || '').toLowerCase().includes(val));
+        renderList(filtered);
     }
 
     async function openPlayMode(id) {
         currentQRId = id;
-        const doc = await db.collection('qrcodes').doc(id).get();
-        const d = doc.data();
-        document.getElementById('play-title').innerText = d.title || "Kịch bản bài giảng";
+        const item = qrDataCache.find(i => i.id === id);
+        document.getElementById('play-title').innerText = item.title || "Bài giảng";
         document.getElementById('play-overlay').style.display = 'flex';
         document.getElementById('play-qr-canvas').innerHTML = "";
         new QRCode(document.getElementById('play-qr-canvas'), {text: `${window.location.origin}/${id}`, width: 230, height: 230});
@@ -249,13 +270,13 @@
         const drop = document.getElementById('play-dropdown');
         drop.innerHTML = "";
 
-        if (d.links && Array.isArray(d.links) && d.links.length > 0) {
-            d.links.forEach((l, i) => {
+        if (item.links && Array.isArray(item.links) && item.links.length > 0) {
+            item.links.forEach((l, i) => {
                 const opt = document.createElement('option'); opt.value = i; opt.innerText = `${i+1}. ${l.label}`;
-                if(i == (d.active_index || 0)) opt.selected = true;
+                if(i == (item.active_index || 0)) opt.selected = true;
                 drop.appendChild(opt);
             });
-        } else if (d.url) {
+        } else if (item.url) {
             const opt = document.createElement('option'); opt.value = 0; opt.innerText = "Nội dung v1.x (Gốc)";
             drop.appendChild(opt);
         }
@@ -263,24 +284,24 @@
 
     async function updateActiveLink(idx) {
         await db.collection('qrcodes').doc(currentQRId).update({ active_index: parseInt(idx) });
+        // Cập nhật cache local để khi đóng Play mode không bị load lại cũ
+        const item = qrDataCache.find(i => i.id === currentQRId);
+        if(item) item.active_index = parseInt(idx);
     }
 
-    function closePlayMode() { document.getElementById('play-overlay').style.display = 'none'; loadHistory(); }
+    function closePlayMode() { document.getElementById('play-overlay').style.display = 'none'; renderList(qrDataCache); }
 
     async function editQR(id) {
-        const doc = await db.collection('qrcodes').doc(id).get();
-        const d = doc.data();
+        const item = qrDataCache.find(i => i.id === id);
         document.getElementById('edit-id').value = id;
-        document.getElementById('qr-title').value = d.title || "";
+        document.getElementById('qr-title').value = item.title || "";
         document.getElementById('links-container').innerHTML = "";
         linkCount = 0;
         
-        if(d.links && Array.isArray(d.links) && d.links.length > 0) {
-            d.links.forEach(l => addLinkRow(l.label, l.url));
-        } else if(d.url) {
-            addLinkRow("Nội dung gốc (v1)", d.url);
-        } else {
-            addLinkRow();
+        if(item.links && Array.isArray(item.links) && item.links.length > 0) {
+            item.links.forEach(l => addLinkRow(l.label, l.url));
+        } else if(item.url) {
+            addLinkRow("Gốc (v1)", item.url);
         }
         showPage('create-page');
     }
