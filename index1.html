@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thế Giới QR | Version 1.36 Monitor</title>
-    
+    <title>VDC - Quản Lý QR v1.36.1</title>
     <link rel="icon" type="image/jpeg" href="logo_Group.jpg">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -13,257 +12,301 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        :root { --primary: #27ae60; --dark: #2c3e50; --sidebar-width: 260px; }
+        :root { --primary: #27ae60; --dark: #2c3e50; --sidebar-width: 280px; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background: #f4f7f6; display: flex; flex-direction: column; min-height: 100vh; }
+        body { background: #f4f7f6; display: flex; min-height: 100vh; }
         
-        #sidebar { width: var(--sidebar-width); background: var(--dark); color: white; transition: 0.3s; position: fixed; height: 100%; z-index: 1000; }
-        #sidebar.hide { transform: translateX(-100%); }
-        .sidebar-header { padding: 25px 20px; text-align: center; border-bottom: 1px solid #34495e; }
-        .sidebar-header img { width: 65px; height: 65px; border-radius: 50%; border: 2px solid var(--primary); margin-bottom: 10px; }
-        .nav-link { padding: 15px 25px; display: block; color: #bdc3c7; text-decoration: none; cursor: pointer; transition: 0.3s; border-left: 5px solid transparent; }
+        /* SIDEBAR */
+        #sidebar { width: var(--sidebar-width); background: var(--dark); color: white; position: fixed; height: 100%; z-index: 1000; transition: 0.3s; }
+        .sidebar-header { padding: 30px 20px; text-align: center; border-bottom: 1px solid #34495e; }
+        .sidebar-header img { width: 70px; height: 70px; border-radius: 50%; border: 2px solid var(--primary); margin-bottom: 10px; }
+        .nav-link { padding: 15px 25px; display: block; color: #bdc3c7; text-decoration: none; cursor: pointer; border-left: 5px solid transparent; transition: 0.2s; }
         .nav-link:hover, .nav-link.active { background: #34495e; color: white; border-left-color: var(--primary); }
-        #main-content { transition: 0.3s; padding: 20px; flex: 1; }
-        #main-content.with-sidebar { margin-left: var(--sidebar-width); }
-        .topbar { display: flex; background: white; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); justify-content: space-between; align-items: center; }
         
-        /* PLAY OVERLAY REDESIGN v1.36 */
-        #play-overlay { position: fixed; inset: 0; background: white; z-index: 9999; display: none; flex-direction: column; padding: 20px; text-align: center; overflow-y: auto; }
-        .play-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px; }
-        .play-select-container { width: 100%; max-width: 800px; margin: 0 auto 20px; }
-        .play-select { width: 100%; padding: 15px; border-radius: 12px; border: 2.5px solid var(--primary); font-size: 18px; font-weight: bold; background: #f0fff4; cursor: pointer; }
+        /* MAIN CONTENT */
+        #main-content { margin-left: var(--sidebar-width); flex: 1; padding: 25px; width: calc(100% - var(--sidebar-width)); }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; }
         
-        /* MONITOR GRID: Chia đôi màn hình trên Laptop */
-        .monitor-grid { display: flex; gap: 20px; max-width: 1000px; margin: 0 auto; flex-wrap: wrap; justify-content: center; }
-        .monitor-qr { flex: 1; min-width: 250px; background: #fff; padding: 20px; border: 1px solid #eee; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        .monitor-preview { flex: 1; min-width: 300px; background: #000; border-radius: 20px; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; min-height: 250px; border: 1px solid #eee; }
-        .monitor-preview iframe, .monitor-preview img { width: 100%; height: 100%; object-fit: cover; border: none; }
-        .preview-label { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); color: #fff; padding: 5px 12px; border-radius: 50px; font-size: 11px; z-index: 10; }
-
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1.5px solid #eee; border-radius: 10px; outline: none; }
-        button { padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
-        .btn-primary { background: var(--primary); color: white; width: 100%; }
-        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .qr-thumb-box { width: 50px; height: 50px; background: white; border: 1px solid #eee; border-radius: 5px; padding: 2px; }
-        .btn-icon { width: 34px; height: 34px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; color: white; margin: 0 2px; border: none; cursor: pointer; }
+        /* TABLE STYLES */
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; }
+        th { background: #f8f9fa; padding: 15px; text-align: left; font-size: 13px; color: #7f8c8d; border-bottom: 2px solid #eee; }
+        td { padding: 15px; border-bottom: 1px solid #f2f2f2; vertical-align: middle; }
         
+        /* UTILS */
+        .btn-icon { width: 32px; height: 32px; border-radius: 8px; border: none; color: white; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; margin-right: 4px; transition: 0.2s; }
+        .btn-icon:hover { opacity: 0.8; transform: translateY(-2px); }
+        .copy-badge { font-size: 11px; color: var(--primary); cursor: pointer; background: #e8f5e9; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px; }
+        .click-count { background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 12px; }
         .hidden { display: none !important; }
-        footer { background: var(--dark); color: #bdc3c7; text-align: center; padding: 25px; font-size: 13px; margin-top: auto; }
-        @media (max-width: 768px) { 
-            #main-content.with-sidebar { margin-left: 0; } 
-            #sidebar { transform: translateX(-100%); } 
-            #sidebar.show { transform: translateX(0); }
+        
+        /* PLAY OVERLAY */
+        #play-overlay { position: fixed; inset: 0; background: white; z-index: 9999; display: none; flex-direction: column; padding: 20px; }
+        .monitor-grid { display: flex; gap: 20px; flex: 1; margin-top: 20px; }
+        .monitor-left { flex: 1; border: 1px solid #eee; border-radius: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .monitor-right { flex: 1; background: #000; border-radius: 15px; overflow: hidden; position: relative; }
+
+        @media (max-width: 768px) {
+            #sidebar { transform: translateX(-100%); }
+            #main-content { margin-left: 0; width: 100%; }
             .monitor-grid { flex-direction: column; }
-            .monitor-preview { min-height: 200px; }
         }
-        @media (min-width: 769px) { .topbar { display: none; } }
     </style>
 </head>
 <body>
 
-    <div id="sidebar" class="hide">
+    <div id="sidebar">
         <div class="sidebar-header">
             <img src="logo_Group.jpg">
-            <h3>THEGIOI<span style="color:var(--primary)">QR</span> <small style="font-size: 10px;">v1.36</small></h3>
-            <div id="user-display-info" class="hidden" style="margin-top:10px; font-size:12px;">
-                <b id="display-name" style="color:var(--primary)"></b><br>
-                <i id="display-email"></i>
+            <h3 style="letter-spacing: 1px;">VDC <span style="color:var(--primary)">TRAINING</span></h3>
+            <div id="acc-info" style="margin-top:15px; font-size:12px; border-top:1px solid #34495e; padding-top:15px;">
+                <b id="user-name" style="color:var(--primary); font-size:14px;">Đang tải...</b><br>
+                <span id="user-email" style="opacity:0.6">---</span>
             </div>
         </div>
-        <div class="nav-link" id="nav-create" onclick="navToCreate()"><i class="fas fa-plus-circle"></i> Tạo Mã QR Mới</div>
-        <div class="nav-link" id="nav-history" onclick="showPage('history-page')"><i class="fas fa-history"></i> Mã QR của tôi</div>
-        <div class="nav-link" onclick="logout()" style="color: #ff7675; margin-top: 30px;"><i class="fas fa-power-off"></i> Đăng Xuất</div>
+        <div class="nav-link active" onclick="showPage('history-page', this)"><i class="fas fa-qrcode"></i> Mã QR của tôi</div>
+        <div class="nav-link" onclick="navToCreate(this)"><i class="fas fa-plus-circle"></i> Tạo kịch bản mới</div>
+        <div class="nav-link" onclick="logout()" style="color:#ff7675; margin-top:50px;"><i class="fas fa-sign-out-alt"></i> Đăng xuất</div>
     </div>
 
-    <div id="main-wrapper">
-        <div id="main-content">
-            <div class="topbar"><i class="fas fa-bars" onclick="toggleSidebar()"></i><strong>THEGIOIQR.COM v1.36</strong><img src="logo_Group.jpg" style="width:30px; border-radius:50%;"></div>
-
-            <div id="guest-view">
-                <div class="card" style="max-width: 400px; margin: 50px auto; text-align: center;">
-                    <img src="logo_Group.jpg" style="width:80px; border-radius:50%; margin-bottom:15px;">
-                    <h2>Đăng Nhập</h2>
-                    <input type="email" id="login-email" placeholder="Email">
-                    <input type="password" id="login-pass" placeholder="Mật khẩu">
-                    <button class="btn-primary" onclick="login()">BẮT ĐẦU</button>
+    <div id="main-content">
+        <div id="history-page" class="page">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2>Quản Lý Mã QR</h2>
+                    <button class="btn-icon" style="background:var(--primary); width:auto; padding:0 15px;" onclick="navToCreate()"><i class="fas fa-plus"></i> Tạo mới</button>
                 </div>
-            </div>
-
-            <div id="user-view" class="hidden">
-                <div id="create-page" class="page hidden">
-                    <div class="card">
-                        <h2 id="form-title">Thiết lập QR</h2>
-                        <input type="hidden" id="edit-id">
-                        <input type="text" id="qr-title" placeholder="Tên bài giảng">
-                        <div id="links-container-v136" style="margin-top: 10px;"></div>
-                        <button onclick="addLinkRow()" style="background: #3498db; color: white; width: 100%; margin-top: 10px;">+ THÊM DÒNG NỘI DUNG</button>
-                        <div style="margin-top: 20px; display: flex; align-items: center; background: #f9f9f9; border-radius: 10px; border: 1.5px solid #eee; padding: 0 10px;">
-                            <span style="color: #888; font-weight: bold;">thegioiqr.com/</span>
-                            <input type="text" id="qr-short-name" placeholder="ten-rut-gon" style="border: none; background: transparent;">
-                        </div>
-                        <button class="btn-primary" onclick="generateQR()" style="margin-top: 25px;">LƯU KỊCH BẢN</button>
-                    </div>
-                </div>
-
-                <div id="history-page" class="page hidden">
-                    <div class="card">
-                        <h2>Mã QR của tôi</h2>
-                        <div style="overflow-x: auto;">
-                            <table style="width:100%; border-collapse: collapse;">
-                                <thead><tr style="text-align:left;"><th>QR</th><th>Thông tin</th><th style="text-align:center;">Hành động</th></tr></thead>
-                                <tbody id="history-body"></tbody>
-                            </table>
-                        </div>
-                    </div>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Thời gian</th>
+                                <th>Nội dung QR</th>
+                                <th>Đang phát</th>
+                                <th style="text-align:center;">Lượt quét</th>
+                                <th style="text-align:center;">Công cụ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-list"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
-        <footer>Hệ thống vận hành bởi <b>Mr. An Toàn - 0399.496.319</b></footer>
+
+        <div id="create-page" class="page hidden">
+            <div class="card">
+                <h2 id="form-title">Thiết lập QR</h2>
+                <input type="hidden" id="edit-id">
+                <input type="text" id="qr-title" placeholder="Tên bài giảng / Nhóm QR" style="width:100%; padding:12px; margin:15px 0; border:1px solid #ddd; border-radius:8px;">
+                <div id="links-container-v136"></div>
+                <button onclick="addLinkRow()" style="background:#3498db; color:white; width:100%; border:none; padding:10px; margin:10px 0; border-radius:8px; cursor:pointer;">+ Thêm dòng nội dung</button>
+                
+                <div style="margin-top:20px; display:flex; align-items:center; background:#f0f2f5; padding:10px; border-radius:8px;">
+                    <span style="font-weight:bold; color:#666;">Link rút gọn: thegioiqr.com/</span>
+                    <input type="text" id="qr-short-name" placeholder="ten-tuy-chinh" style="border:none; background:transparent; padding:5px; flex:1; outline:none; font-weight:bold; color:var(--primary);">
+                </div>
+                <button onclick="saveQR()" style="background:var(--primary); color:white; width:100%; border:none; padding:15px; margin-top:20px; border-radius:10px; font-weight:bold; cursor:pointer;">LƯU KỊCH BẢN</button>
+            </div>
+        </div>
     </div>
 
     <div id="play-overlay">
-        <div class="play-header">
-            <h2 id="play-title-display">---</h2>
-            <button onclick="closePlayMode()" style="background:#e74c3c; color:white; border-radius: 10px; padding: 10px 20px;">ĐÓNG</button>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 id="play-title">---</h2>
+            <button onclick="closePlay()" style="background:#e74c3c; color:white; border:none; padding:10px 25px; border-radius:8px; cursor:pointer;">ĐÓNG</button>
         </div>
-
-        <div class="play-select-container">
-            <select id="play-dropdown" class="play-select" onchange="syncPlayContent(this.value)"></select>
-        </div>
-
+        <select id="play-select" onchange="changeContent(this.value)" style="width:100%; padding:15px; margin-top:15px; border-radius:10px; border:2px solid var(--primary); font-size:18px; font-weight:bold;"></select>
+        
         <div class="monitor-grid">
-            <div class="monitor-qr">
-                <div id="play-qr-canvas" style="display:inline-block;"></div>
-                <p style="font-weight: bold; color: var(--primary); margin-top: 10px; font-size: 14px;">MÃ QUÉT HỌC VIÊN</p>
+            <div class="monitor-left">
+                <div id="play-qr-big"></div>
+                <p style="margin-top:15px; font-weight:bold; color:var(--primary);">HỌC VIÊN QUÉT MÃ NÀY</p>
             </div>
-
-            <div class="monitor-preview">
-                <div class="preview-label"><i class="fas fa-eye"></i> GIÁM SÁT GIẢNG VIÊN</div>
-                <div id="monitor-content" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; text-align:center; padding:10px;">
-                    Đang tải nội dung...
-                </div>
+            <div class="monitor-right">
+                <div id="monitor-frame" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:white;">Đang tải xem trước...</div>
             </div>
         </div>
-        <p style="font-size: 12px; color: #888; margin-top: 20px;">Giảng viên đổi nội dung trên đây, tất cả mã học viên đã quét sẽ tự động cập nhật.</p>
     </div>
+
+    <div id="qr-hidden" class="hidden"></div>
 
 <script>
     const firebaseConfig = { apiKey: "AIzaSyCjZfDgE4JFRilXh5dCtrTFLA3-BlerRNE", authDomain: "thegioiqr-2026.firebaseapp.com", projectId: "thegioiqr-2026", storageBucket: "thegioiqr-2026.firebasestorage.app", messagingSenderId: "911702916265", appId: "1:911702916265:web:d42d948ebb7e7a53dcbdb8" };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth(); const db = firebase.firestore();
     
-    let linkCount = 0; let currentQRId = ""; let activeLinksData = [];
+    let currentLinks = []; let editId = "";
 
-    function getShortUrl(id) { return `${window.location.protocol}//${window.location.host}/go1.html?id=${id}`; }
-    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('show'); }
-    function showPage(pageId) { document.querySelectorAll('.page').forEach(p => p.classList.add('hidden')); document.getElementById(pageId).classList.remove('hidden'); if(pageId==='history-page') loadHistory(); }
-
-    function addLinkRow(l = '', u = '') {
-        linkCount++;
-        const div = document.createElement('div'); div.style = "display:flex; gap:8px; margin-bottom:10px; align-items:center;"; div.id = `row-${linkCount}`;
-        div.innerHTML = `<input type="text" class="l-label" placeholder="Tên" value="${l}" style="flex:1"><input type="text" class="l-url" placeholder="Link" value="${u}" style="flex:2"><button onclick="this.parentElement.remove()" style="color:red; background:none; font-size:20px;">×</button>`;
-        document.getElementById('links-container-v136').appendChild(div);
+    // 1. Quản lý điều hướng
+    function showPage(id, btn) {
+        document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+        document.getElementById(id).classList.remove('hidden');
+        if(btn) {
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            btn.classList.add('active');
+        }
+        if(id === 'history-page') loadHistory();
     }
 
-    async function generateQR() {
-        const title = document.getElementById('qr-title').value;
-        const customShort = document.getElementById('qr-short-name').value.trim().toLowerCase();
-        const oldId = document.getElementById('edit-id').value;
-        const labs = document.querySelectorAll('.l-label'); const urls = document.querySelectorAll('.l-url');
-        let linksArray = [];
-        labs.forEach((l, i) => { if(l.value && urls[i].value) linksArray.push({ label: l.value, url: urls[i].value }); });
-        if (!title || linksArray.length === 0) return alert("Thiếu thông tin!");
-        try {
-            const data = { uid: auth.currentUser.uid, title, links: linksArray, active_index: 0, date: firebase.firestore.Timestamp.now() };
-            if (oldId) {
-                if (customShort && customShort !== oldId) {
-                    await db.collection('qrcodes').doc(customShort).set(data);
-                    await db.collection('qrcodes').doc(oldId).delete();
-                } else { await db.collection('qrcodes').doc(oldId).update({ title, links: linksArray }); }
-            } else {
-                if (customShort) await db.collection('qrcodes').doc(customShort).set(data);
-                else await db.collection('qrcodes').add(data);
-            }
-            alert("✅ Đã lưu!"); showPage('history-page');
-        } catch (e) { alert("Lỗi!"); }
-    }
-
+    // 2. Tải danh sách QR (Sắp xếp mới nhất + Analytics)
     async function loadHistory() {
-        const snap = await db.collection('qrcodes').where('uid', '==', auth.currentUser.uid).orderBy('date', 'desc').get();
-        const body = document.getElementById('history-body'); body.innerHTML = "";
+        const user = auth.currentUser;
+        // Lấy lượt quét trước
+        const logSnap = await db.collection('click_logs').get();
+        let counts = {};
+        logSnap.forEach(l => { const qid = l.data().qr_id; counts[qid] = (counts[qid] || 0) + 1; });
+
+        const snap = await db.collection('qrcodes').where('uid', '==', user.uid).orderBy('date', 'desc').get();
+        const list = document.getElementById('history-list');
+        list.innerHTML = "";
+
         snap.forEach(doc => {
-            const d = doc.data(); const sUrl = getShortUrl(doc.id);
-            const activeText = d.links ? (d.links[d.active_index || 0]?.label || "N/A") : "v1.x";
-            body.innerHTML += `<tr><td><div id="th-${doc.id}" class="qr-thumb-box" onclick="openPlayMode('${doc.id}')"></div></td><td><b>${d.title}</b><br><small style="color:var(--primary);">🔵 ${activeText}</small></td><td style="text-align: center;"><button class="btn-icon" style="background:var(--primary)" onclick="openPlayMode('${doc.id}')"><i class="fas fa-play"></i></button><button class="btn-icon" style="background:#3498db" onclick="editQR('${doc.id}')"><i class="fas fa-pen"></i></button><button class="btn-icon" style="background:#e74c3c" onclick="deleteQR('${doc.id}')"><i class="fas fa-trash"></i></button></td></tr>`;
-            setTimeout(() => { const t = document.getElementById(`th-${doc.id}`); if(t) new QRCode(t, { text: sUrl, width: 50, height: 50 }); }, 100);
+            const d = doc.data();
+            const qid = doc.id;
+            const shortUrl = `thegioiqr.com/${qid}`;
+            const activeLabel = d.links ? (d.links[d.active_index || 0]?.label || "N/A") : "---";
+            const dateStr = d.date ? d.date.toDate().toLocaleString('vi-VN', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '---';
+
+            list.innerHTML += `
+                <tr>
+                    <td style="font-size:11px; color:#888;">${dateStr}</td>
+                    <td>
+                        <b>${d.title}</b><br>
+                        <span class="copy-badge" onclick="copyText('${shortUrl}')"><i class="fas fa-link"></i> ${shortUrl}</span>
+                    </td>
+                    <td><small style="color:var(--primary); font-weight:bold;">${activeLabel}</small></td>
+                    <td style="text-align:center;"><span class="click-count">${counts[qid] || 0}</span></td>
+                    <td style="text-align:center;">
+                        <button class="btn-icon" style="background:#27ae60" onclick="openPlay('${qid}')" title="Play"><i class="fas fa-play"></i></button>
+                        <button class="btn-icon" style="background:#3498db" onclick="downloadQR('${qid}')" title="Tải mã"><i class="fas fa-download"></i></button>
+                        <button class="btn-icon" style="background:#f39c12" onclick="editQR('${qid}')" title="Sửa"><i class="fas fa-edit"></i></button>
+                        <button class="btn-icon" style="background:#e74c3c" onclick="deleteQR('${qid}')" title="Xóa"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
         });
     }
 
+    // 3. Công cụ nhanh
+    function copyText(txt) {
+        navigator.clipboard.writeText(txt);
+        alert("Đã copy link: " + txt);
+    }
+
+    function downloadQR(id) {
+        const div = document.createElement('div');
+        new QRCode(div, { text: `https://thegioiqr.com/go1.html?id=${id}`, width: 500, height: 500 });
+        setTimeout(() => {
+            const img = div.querySelector('img').src;
+            const link = document.createElement('a');
+            link.href = img;
+            link.download = `QR_${id}.png`;
+            link.click();
+        }, 300);
+    }
+
+    // 4. Play Mode với Monitor
+    async function openPlay(id) {
+        editId = id;
+        const doc = await db.collection('qrcodes').doc(id).get();
+        const d = doc.data();
+        currentLinks = d.links || [];
+        
+        document.getElementById('play-title').innerText = d.title;
+        document.getElementById('play-overlay').style.display = 'flex';
+        
+        const sel = document.getElementById('play-select');
+        sel.innerHTML = "";
+        currentLinks.forEach((l, i) => {
+            const opt = document.createElement('option');
+            opt.value = i; opt.innerText = l.label;
+            if(i == (d.active_index || 0)) opt.selected = true;
+            sel.appendChild(opt);
+        });
+
+        document.getElementById('play-qr-big').innerHTML = "";
+        new QRCode(document.getElementById('play-qr-big'), { text: `https://thegioiqr.com/go1.html?id=${id}`, width: 250, height: 250 });
+        updateMonitor(currentLinks[d.active_index || 0].url);
+    }
+
+    async function changeContent(idx) {
+        await db.collection('qrcodes').doc(editId).update({ active_index: parseInt(idx) });
+        updateMonitor(currentLinks[idx].url);
+    }
+
+    function updateMonitor(url) {
+        const frame = document.getElementById('monitor-frame');
+        if(url.includes('youtube.com') || url.includes('youtu.be')) {
+            const vid = url.split('v=')[1] || url.split('/').pop();
+            frame.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen></iframe>`;
+        } else if(url.match(/\.(jpeg|jpg|gif|png)$/)) {
+            frame.innerHTML = `<img src="${url}" style="max-width:100%; max-height:100%;">`;
+        } else {
+            frame.innerHTML = `<div style="text-align:center; padding:20px;"><i class="fas fa-file-alt" style="font-size:50px;"></i><br><br>Tài liệu: ${new URL(url).hostname}<br><a href="${url}" target="_blank" style="color:white; text-decoration:underline;">Bấm để xem thử</a></div>`;
+        }
+    }
+
+    // 5. Auth & Sidebar Info
+    auth.onAuthStateChanged(async user => {
+        if(user) {
+            const uDoc = await db.collection('users').doc(user.uid).get();
+            if(uDoc.exists) {
+                document.getElementById('user-name').innerText = uDoc.data().name;
+                document.getElementById('user-email').innerText = user.email;
+            }
+            showPage('history-page');
+        } else {
+            // Chuyển hướng về login nếu chưa đăng nhập
+            window.location.href = "login.html"; 
+        }
+    });
+
+    function closePlay() { document.getElementById('play-overlay').style.display = 'none'; loadHistory(); }
+    function logout() { auth.signOut().then(() => location.reload()); }
+
+    // Phần Create/Edit (Giữ nguyên logic thêm dòng của bạn)
+    function addLinkRow(l='', u='') {
+        const container = document.getElementById('links-container-v136');
+        const div = document.createElement('div');
+        div.style = "display:flex; gap:10px; margin-bottom:10px;";
+        div.innerHTML = `<input type="text" class="l-label" placeholder="Tên mục" value="${l}" style="flex:1; padding:8px; border-radius:5px; border:1px solid #ddd;"><input type="text" class="l-url" placeholder="Link" value="${u}" style="flex:2; padding:8px; border-radius:5px; border:1px solid #ddd;"><button onclick="this.parentElement.remove()" style="background:none; border:none; color:red; cursor:pointer;">×</button>`;
+        container.appendChild(div);
+    }
+
     async function editQR(id) {
-        const doc = await db.collection('qrcodes').doc(id).get(); const d = doc.data();
-        document.getElementById('edit-id').value = id; document.getElementById('qr-title').value = d.title;
-        document.getElementById('qr-short-name').value = id; document.getElementById('links-container-v136').innerHTML = "";
-        if (d.links) d.links.forEach(l => addLinkRow(l.label, l.url)); else if (d.url) addLinkRow("Gốc", d.url);
+        const doc = await db.collection('qrcodes').doc(id).get();
+        const d = doc.data();
+        editId = id;
+        document.getElementById('edit-id').value = id;
+        document.getElementById('qr-title').value = d.title;
+        document.getElementById('qr-short-name').value = id;
+        document.getElementById('links-container-v136').innerHTML = "";
+        d.links.forEach(l => addLinkRow(l.label, l.url));
         showPage('create-page');
     }
 
-    // MONITOR LOGIC v1.36
-    function updateMonitor(url) {
-        const monitor = document.getElementById('monitor-content');
-        if (!url) { monitor.innerHTML = "Link trống"; return; }
-
-        if (url.match(/\.(jpeg|jpg|gif|png)$/) != null) {
-            monitor.innerHTML = `<img src="${url}">`;
-        } else if (url.includes("youtube.com") || url.includes("youtu.be")) {
-            let vId = url.split('v=')[1] || url.split('/').pop();
-            if(vId.includes('&')) vId = vId.split('&')[0];
-            monitor.innerHTML = `<iframe src="https://www.youtube.com/embed/${vId}" allowfullscreen></iframe>`;
-        } else {
-            monitor.innerHTML = `<div style="text-align:center"><i class="fas fa-file-alt" style="font-size:40px; margin-bottom:10px;"></i><br><b>Tài liệu ngoài hệ thống</b><br><small>${new URL(url).hostname}</small><br><br><a href="${url}" target="_blank" style="color:white; text-decoration:underline;">Mở kiểm tra nhanh</a></div>`;
-        }
-    }
-
-    async function openPlayMode(id) {
-        currentQRId = id; const doc = await db.collection('qrcodes').doc(id).get(); const d = doc.data();
-        activeLinksData = d.links || [];
-        document.getElementById('play-title-display').innerText = d.title;
-        document.getElementById('play-overlay').style.display = 'flex';
-        document.getElementById('play-qr-canvas').innerHTML = "";
-        new QRCode(document.getElementById('play-qr-canvas'), { text: getShortUrl(id), width: 200, height: 200 });
+    async function saveQR() {
+        const title = document.getElementById('qr-title').value;
+        const short = document.getElementById('qr-short-name').value.trim();
+        const labels = document.querySelectorAll('.l-label');
+        const urls = document.querySelectorAll('.l-url');
+        let arr = [];
+        labels.forEach((l, i) => { if(l.value && urls[i].value) arr.push({label: l.value, url: urls[i].value}); });
         
-        const drop = document.getElementById('play-dropdown'); drop.innerHTML = "";
-        if (activeLinksData.length > 0) {
-            activeLinksData.forEach((l, i) => { 
-                const opt = document.createElement('option'); opt.value = i; opt.innerText = `${i+1}. ${l.label}`;
-                if(i == (d.active_index || 0)) opt.selected = true; drop.appendChild(opt);
-            });
-            updateMonitor(activeLinksData[d.active_index || 0].url);
-        }
+        const data = { title, links: arr, uid: auth.currentUser.uid, date: firebase.firestore.Timestamp.now(), active_index: 0 };
+        if(editId && editId !== short) await db.collection('qrcodes').doc(editId).delete();
+        await db.collection('qrcodes').doc(short || undefined).set(data, {merge:true});
+        alert("Đã lưu kịch bản!");
+        showPage('history-page');
     }
 
-    async function syncPlayContent(idx) {
-        const index = parseInt(idx);
-        await db.collection('qrcodes').doc(currentQRId).update({ active_index: index });
-        updateMonitor(activeLinksData[index].url);
+    function navToCreate(btn) {
+        editId = "";
+        document.getElementById('edit-id').value = "";
+        document.getElementById('qr-title').value = "";
+        document.getElementById('qr-short-name').value = "";
+        document.getElementById('links-container-v136').innerHTML = "";
+        addLinkRow();
+        showPage('create-page', btn);
     }
-
-    function closePlayMode() { document.getElementById('play-overlay').style.display = 'none'; loadHistory(); }
-    function navToCreate() { document.getElementById('edit-id').value=""; document.getElementById('qr-title').value=""; document.getElementById('links-container-v136').innerHTML=""; addLinkRow(); showPage('create-page'); }
-    function logout() { auth.signOut(); location.reload(); }
-    function login() { auth.signInWithEmailAndPassword(document.getElementById('login-email').value, document.getElementById('login-pass').value).catch(e => alert(e.message)); }
-
-    auth.onAuthStateChanged(async user => {
-        if (user) {
-            document.getElementById('guest-view').classList.add('hidden'); document.getElementById('user-view').classList.remove('hidden');
-            document.getElementById('sidebar').classList.remove('hide'); document.getElementById('main-content').classList.add('with-sidebar');
-            const doc = await db.collection('users').doc(user.uid).get();
-            if(doc.exists) { document.getElementById('user-display-info').classList.remove('hidden'); document.getElementById('display-name').innerText = "GV: " + doc.data().name; document.getElementById('display-email').innerText = user.email; }
-            showPage('history-page');
-        } else {
-            document.getElementById('guest-view').classList.remove('hidden'); document.getElementById('user-view').classList.add('hidden');
-            document.getElementById('sidebar').classList.add('hide'); document.getElementById('main-content').classList.remove('with-sidebar');
-        }
-    });
 </script>
 </body>
 </html>
